@@ -89,4 +89,10 @@ bot.action(/rate_(.+)/, async (ctx) => {
 
 bot.launch().then(() => console.log('>>> БОТ УСПЕШНО ЗАПУЩЕН! <<<'));
 
-const port
+const port = process.env.PORT || 3000;
+http.createServer((req, res) => res.end('Bot is running')).listen(port, () => {
+  console.log(`Сервер слушает порт ${port}`);
+});
+
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
