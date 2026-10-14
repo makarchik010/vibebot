@@ -19,13 +19,12 @@ async function getRates() {
 // 1. Команда /start
 bot.start(async (ctx) => {
   await ctx.reply(
-    'Выбирай действие на клавиатуре:',
+    'Привет! Это вайб макар ✌️\nВыбирай действие на клавиатуре:',
     Markup.keyboard([
       ['💵 Курсы валют', '⚡ Пинг сервера']
     ]).resize()
   );
 });
-
 // 2. Пинг
 bot.hears('⚡ Пинг сервера', async (ctx) => {
   await ctx.reply('Понг! Сервер на связи 🚀');
