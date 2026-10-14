@@ -1,93 +1,132 @@
 const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
 
-// Берем токен безопасно из настроек сервера
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Запрос курсов к доллару (USD base)
-async function getRates() {
-  try {
-    const res = await fetch('https://open.er-api.com/v6/latest/USD');
-    if (!res.ok) throw new Error('Ошибка API');
-    const data = await res.json();
-    return data.rates;
-  } catch (e) {
-    console.error('Ошибка получения курсов:', e);
-    return null;
+// База данных учебников и номеров
+// Сюда можно заносить ссылки на сканы или текстовые решения
+const database = {
+  merzlyak_10: {
+    title: 'Мерзляк 10 класс (Алгебра)',
+    tasks: {
+      '1': {
+        type: 'text',
+        content: '📌 **Задание 1 (Мерзляк 10 класс):**\n\n1) D(f) = (-∞; +∞)\n2) Функция четная: f(-x) = (-x)² = x² = f(x)\n3) Ответ: D(f) = R, функция четная.'
+      },
+      '2': {
+        type: 'photo',
+        url: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb', // пример прямой ссылки на фото
+        caption: '📌 **Задание 2 (Мерзляк 10 класс):** Пошаговое оформление на скане.'
+      }
+    }
+  },
+  atanasyan_10: {
+    title: 'Атанасян 10-11 класс (Геометрия)',
+    tasks: {
+      '1': {
+        type: 'text',
+        content: '📌 **Задание 1 (Атанасян 10-11):**\n\nДано: плоскость α, точки A, B ∉ α.\nРешение: Через любые три точки, не лежащие на одной прямой, проходит плоскость, и притом только одна (Аксиома А1).'
+      }
+    }
   }
-}
+};
 
-// 1. Команда /start
+// Хранилище текущего состояния пользователей в памяти (какой учебник выбран)
+const userState = new Map();
+
+// Стартовое меню
 bot.start(async (ctx) => {
+  userState.delete(ctx.from.id);
   await ctx.reply(
-    'Привет! Это вайб макар ✌️\nВыбирай действие на клавиатуре:',
-    Markup.keyboard([
-      ['💵 Курсы валют', '⚡ Пинг сервера']
-    ]).resize()
-  );
-});
-// 2. Пинг
-bot.hears('⚡ Пинг сервера', async (ctx) => {
-  await ctx.reply('Понг! Сервер на связи 🚀');
-});
-
-// 3. Меню выбора валюты
-bot.hears('💵 Курсы валют', async (ctx) => {
-  await ctx.reply(
-    'Выбери валюту для просмотра курса:',
+    '📚 **ГДЗ Математика:**\nВыбери нужный учебник из каталога:',
     Markup.inlineKeyboard([
-      [
-        Markup.button.callback('Доллар (USD → RUB)', 'rate_USD'),
-        Markup.button.callback('Юань (CNY → RUB)', 'rate_CNY')
-      ],
-      [
-        Markup.button.callback('Рупия Шри-Ланки (LKR)', 'rate_LKR')
-      ]
+      [Markup.button.callback('Мерзляк 10 кл (Алгебра)', 'book_merzlyak_10')],
+      [Markup.button.callback('Атанасян 10-11 кл (Геометрия)', 'book_atanasyan_10')]
     ])
   );
 });
 
-// 4. Обработка кнопок и инлайн-обновление текста
-bot.action(/rate_(.+)/, async (ctx) => {
-  const currency = ctx.match[1];
-  await ctx.answerCbQuery('Запрашиваю курс...');
+// Обработка выбора учебника
+bot.action(/book_(.+)/, async (ctx) => {
+  const bookId = ctx.match[1];
+  await ctx.answerCbQuery();
 
-  const rates = await getRates();
-  if (!rates) {
-    return ctx.editMessageText('Не удалось получить данные с биржи. Попробуй позже.');
+  if (!database[bookId]) {
+    return ctx.reply('Учебник пока наполняется базой.');
   }
 
-  let text = '';
-  const rubPerUsd = rates.RUB;
-  const lkrPerUsd = rates.LKR;
-  const cnyPerUsd = rates.CNY;
-
-  if (currency === 'USD') {
-    text = `💵 *Курс Доллара США:*\n\n• 1 USD ≈ *${rubPerUsd.toFixed(2)} RUB*`;
-  } else if (currency === 'CNY') {
-    const rubPerCny = rubPerUsd / cnyPerUsd;
-    text = `🇨🇳 *Курс Китайского юаня:*\n\n• 1 CNY ≈ *${rubPerCny.toFixed(2)} RUB*\n• 1 USD ≈ *${cnyPerUsd.toFixed(2)} CNY*`;
-  } else if (currency === 'LKR') {
-    const rubPerLkr = rubPerUsd / lkrPerUsd;
-    text = `🇱🇰 *Курс Шри-ланкийской рупии (LKR):*\n\n• 1 LKR ≈ *${rubPerLkr.toFixed(4)} RUB*\n• 1 USD ≈ *${lkrPerUsd.toFixed(2)} LKR*`;
-  }
-  text += `\n\n_Обновлено: ${new Date().toLocaleTimeString('ru-RU')}_`;
+  // Запоминаем, что этот пользователь сейчас ищет номер в этой книге
+  userState.set(ctx.from.id, bookId);
 
   await ctx.editMessageText(
-    text,
+    `📖 Выбран: *${database[bookId].title}*\n\nНапиши номер задания в чат (например: 1 или 2):`,
     {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard([
-        [
-          Markup.button.callback('Доллар (USD → RUB)', 'rate_USD'),
-          Markup.button.callback('Юань (CNY → RUB)', 'rate_CNY')
-        ],
-        [
-          Markup.button.callback('Рупия Шри-Ланки (LKR)', 'rate_LKR')
-        ]
+        [Markup.button.callback('⬅️ Назад к учебникам', 'back_to_books')]
       ])
     }
   );
+});
+
+// Кнопка "Назад"
+bot.action('back_to_books', async (ctx) => {
+  userState.delete(ctx.from.id);
+  await ctx.answerCbQuery();
+  await ctx.editMessageText(
+    '📚 Выбери нужный учебник из каталога:',
+    Markup.inlineKeyboard([
+      [Markup.button.callback('Мерзляк 10 кл (Алгебра)', 'book_merzlyak_10')],
+      [Markup.button.callback('Атанасян 10-11 кл (Геометрия)', 'book_atanasyan_10')]
+    ])
+  );
+});
+
+// Обработка текстового сообщения с номером задания
+bot.on('text', async (ctx) => {
+  const userId = ctx.from.id;
+  const currentBookId = userState.get(userId);
+
+  // Если учебник еще не выбран
+  if (!currentBookId) {
+    return ctx.reply(
+      'Сначала выбери учебник через команду /start',
+      Markup.inlineKeyboard([
+        [Markup.button.callback('Выбрать учебник', 'back_to_books')]
+      ])
+    );
+  }
+
+  const taskNumber = ctx.message.text.trim();
+  const book = database[currentBookId];
+  const task = book.tasks[taskNumber];
+
+  if (!task) {
+    return ctx.reply(
+      `Задание №${taskNumber} в "${book.title}" пока не добавлено.\nПопробуй ввести 1 или 2.`,
+      Markup.inlineKeyboard([
+        [Markup.button.callback('⬅️ Сменить учебник', 'back_to_books')]
+      ])
+    );
+  }
+
+  // Отправляем решение в зависимости от типа (текст или скан)
+  if (task.type === 'text') {
+    await ctx.reply(task.content, {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('⬅️ Другой учебник', 'back_to_books')]
+      ])
+    });
+  } else if (task.type === 'photo') {
+    await ctx.replyWithPhoto(task.url, {
+      caption: task.caption,
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('⬅️ Другой учебник', 'back_to_books')]
+      ])
+    });
+  }
 });
 
 bot.launch().then(() => console.log('>>> БОТ УСПЕШНО ЗАПУЩЕН! <<<'));
