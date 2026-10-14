@@ -69,9 +69,8 @@ bot.action(/rate_(.+)/, async (ctx) => {
     text = `🇨🇳 *Курс Китайского юаня:*\n\n• 1 CNY ≈ *${rubPerCny.toFixed(2)} RUB*\n• 1 USD ≈ *${cnyPerUsd.toFixed(2)} CNY*`;
   } else if (currency === 'LKR') {
     const rubPerLkr = rubPerUsd / lkrPerUsd;
-    text = `🇱🇰 *Курс Шри-ланкийской рупии (LKR):*\n\n• 100 LKR ≈ *${(rubPerLkr * 100).toFixed(2)} RUB*\n• 1 USD ≈ *${lkrPerUsd.toFixed(2)} LKR*`;
+    text = `🇱🇰 *Курс Шри-ланкийской рупии (LKR):*\n\n• 1 LKR ≈ *${rubPerLkr.toFixed(4)} RUB*\n• 1 USD ≈ *${lkrPerUsd.toFixed(2)} LKR*`;
   }
-
   text += `\n\n_Обновлено: ${new Date().toLocaleTimeString('ru-RU')}_`;
 
   await ctx.editMessageText(
