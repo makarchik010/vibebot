@@ -1,7 +1,8 @@
 const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
 
-const bot = new Telegraf('8805698597:AAFcJ-Gr7d9xCqmtpQT8ZdRYq3eGzhegDic');
+// Берем токен безопасно из настроек сервера
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Запрос курсов к доллару (USD base)
 async function getRates() {
