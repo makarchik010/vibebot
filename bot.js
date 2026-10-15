@@ -3,6 +3,7 @@ const http = require('http');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// Получение курсов с API
 async function getRates() {
   try {
     const res = await fetch('https://open.er-api.com/v6/latest/USD');
@@ -15,19 +16,29 @@ async function getRates() {
   }
 }
 
+// 1. Команда /start
 bot.start(async (ctx) => {
   await ctx.reply(
-    'Привет! Это вайб макар!\n\nВыбирай действие на клавиатуре:',
-    Markup.keyboard([
-      ['💵 Курсы валют', '⚡ Пинг сервера']
-    ]).resize()
+    'Привет! Это вайб макар ✌️\n\n' +
+    '📌 *Что я умею:*\n' +
+    '1. Показывать курсы валют по кнопкам ниже.\n' +
+    '2. *Конвертировать на лету:* просто напиши мне сумму и валюту.\n' +
+    'Например: `150 cny`, `50 usd`, `2500 lkr` или `300 юаней`.',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([
+        ['💵 Курсы валют', '⚡ Пинг сервера']
+      ]).resize()
+    }
   );
 });
 
+// 2. Пинг
 bot.hears('⚡ Пинг сервера', async (ctx) => {
   await ctx.reply('Понг! Сервер на связи 🚀');
 });
 
+// 3. Классическое меню курсов
 bot.hears('💵 Курсы валют', async (ctx) => {
   await ctx.reply(
     'Выбери валюту для просмотра курса:',
@@ -43,6 +54,7 @@ bot.hears('💵 Курсы валют', async (ctx) => {
   );
 });
 
+// 4. Инлайн-кнопки курсов
 bot.action(/rate_(.+)/, async (ctx) => {
   const currency = ctx.match[1];
   await ctx.answerCbQuery('Запрашиваю курс...');
@@ -87,12 +99,8 @@ bot.action(/rate_(.+)/, async (ctx) => {
   );
 });
 
-bot.launch().then(() => console.log('>>> БОТ УСПЕШНО ЗАПУЩЕН! <<<'));
+// 5. Умный конвертер текста (middleware / message handler)
+bot.on('text', async (ctx, next) => {
+  const text = ctx.message.text.trim().toLowerCase();
 
-const port = process.env.PORT || 3000;
-http.createServer((req, res) => res.end('Bot is running')).listen(port, () => {
-  console.log(`Сервер слушает порт ${port}`);
-});
-
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+  // И
