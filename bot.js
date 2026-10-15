@@ -4,7 +4,7 @@ const http = require('http');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // ТВОЙ TELEGRAM ID (число)
-const ADMIN_ID = 123456789;
+const ADMIN_ID = 1681547868;
 
 // Конфигурация тарифов и маркетинговой упаковки
 const CONFIG = {
