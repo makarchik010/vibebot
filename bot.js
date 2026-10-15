@@ -3,7 +3,6 @@ const http = require('http');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Получение курсов с API
 async function getRates() {
   try {
     const res = await fetch('https://open.er-api.com/v6/latest/USD');
@@ -16,7 +15,6 @@ async function getRates() {
   }
 }
 
-// 1. Команда /start
 bot.start(async (ctx) => {
   await ctx.reply(
     'Привет! Это вайб макар ✌️\n\n' +
@@ -33,12 +31,10 @@ bot.start(async (ctx) => {
   );
 });
 
-// 2. Пинг
 bot.hears('⚡ Пинг сервера', async (ctx) => {
   await ctx.reply('Понг! Сервер на связи 🚀');
 });
 
-// 3. Классическое меню курсов
 bot.hears('💵 Курсы валют', async (ctx) => {
   await ctx.reply(
     'Выбери валюту для просмотра курса:',
@@ -54,7 +50,6 @@ bot.hears('💵 Курсы валют', async (ctx) => {
   );
 });
 
-// 4. Инлайн-кнопки курсов
 bot.action(/rate_(.+)/, async (ctx) => {
   const currency = ctx.match[1];
   await ctx.answerCbQuery('Запрашиваю курс...');
@@ -99,8 +94,86 @@ bot.action(/rate_(.+)/, async (ctx) => {
   );
 });
 
-// 5. Умный конвертер текста (middleware / message handler)
 bot.on('text', async (ctx, next) => {
   const text = ctx.message.text.trim().toLowerCase();
 
-  // И
+  if (text === '💵 курсы валют' || text === '⚡ пинг сервера' || text.startsWith('/')) {
+    return next();
+  }
+
+  const match = text.match(/^([\d.,]+)\s*([a-zA-Zа-яА-Я$¥]+)$/);
+
+  if (!match) {
+    return ctx.reply(
+      'Не понял запрос 🤔\n' +
+      'Напиши сумму и валюту, например:\n' +
+      '• `120 cny` или `120 юаней`\n' +
+      '• `50 usd` или `50 баксов`\n' +
+      '• `1500 lkr` или `1500 рупий`',
+      { parse_mode: 'Markdown' }
+    );
+  }
+
+  const amount = parseFloat(match[1].replace(',', '.'));
+  const rawCurrency = match[2];
+
+  if (isNaN(amount) || amount <= 0) {
+    return ctx.reply('Введи корректную сумму больше нуля.');
+  }
+
+  let targetCurrency = null;
+  if (/^(usd|\$|доллар|доллара|долларов|бакс|бакса|баксов)$/.test(rawCurrency)) {
+    targetCurrency = 'USD';
+  } else if (/^(cny|¥|юань|юаня|юаней)$/.test(rawCurrency)) {
+    targetCurrency = 'CNY';
+  } else if (/^(lkr|рупия|рупии|рупий)$/.test(rawCurrency)) {
+    targetCurrency = 'LKR';
+  }
+
+  if (!targetCurrency) {
+    return ctx.reply('Пока поддерживаю только USD, CNY и LKR.');
+  }
+
+  const rates = await getRates();
+  if (!rates) {
+    return ctx.reply('Ошибка получения биржевых курсов. Попробуй позже.');
+  }
+
+  const rubPerUsd = rates.RUB;
+  let rateToRub = 0;
+  let currencyLabel = '';
+
+  if (targetCurrency === 'USD') {
+    rateToRub = rubPerUsd;
+    currencyLabel = 'USD';
+  } else if (targetCurrency === 'CNY') {
+    rateToRub = rubPerUsd / rates.CNY;
+    currencyLabel = 'CNY';
+  } else if (targetCurrency === 'LKR') {
+    rateToRub = rubPerUsd / rates.LKR;
+    currencyLabel = 'LKR';
+  }
+
+  const totalPure = amount * rateToRub;
+  const bankMarkup = 1.04;
+  const totalWithMarkup = totalPure * bankMarkup;
+
+  const resultMessage =
+    `🧮 *Расчет конвертации:*\n\n` +
+    `• Сумма: *${amount.toLocaleString('ru-RU')} ${currencyLabel}*\n` +
+    `• По биржевому курсу: *${totalPure.toFixed(2)} ₽*\n` +
+    `• С учетом комиссии (~+4%): *${totalWithMarkup.toFixed(2)} ₽*\n\n` +
+    `_Курс: 1 ${currencyLabel} ≈ ${rateToRub < 1 ? rateToRub.toFixed(4) : rateToRub.toFixed(2)} RUB_`;
+
+  await ctx.reply(resultMessage, { parse_mode: 'Markdown' });
+});
+
+bot.launch().then(() => console.log('>>> БОТ УСПЕШНО ЗАПУЩЕН! <<<'));
+
+const port = process.env.PORT || 3000;
+http.createServer((req, res) => res.end('Bot is running')).listen(port, () => {
+  console.log(`Сервер слушает порт ${port}`);
+});
+
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
