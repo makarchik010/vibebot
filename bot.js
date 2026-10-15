@@ -1,27 +1,52 @@
 const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ТВОЙ TELEGRAM ID (число)
-const ADMIN_ID = 1681547868;
+// НАСТРОЙКИ АДМИНИСТРАТОРА
+const ADMIN_ID = 123456789; // Твой цифровой ID
+const MANAGER_USERNAME = 'cargo2828'; // Например: makar_cargo
 
-// Конфигурация тарифов и маркетинговой упаковки
+// Файл для автосохранения курса
+const RATES_FILE = path.join(__dirname, 'rates.json');
+
+// Загрузка сохраненного курса или дефолт
+function loadRate() {
+  try {
+    if (fs.existsSync(RATES_FILE)) {
+      const data = JSON.parse(fs.readFileSync(RATES_FILE, 'utf8'));
+      if (data && data.baseCnyRate) return data.baseCnyRate;
+    }
+  } catch (e) {
+    console.error('Ошибка чтения rates.json:', e);
+  }
+  return 13.5;
+}
+
+function saveRate(rate) {
+  try {
+    fs.writeFileSync(RATES_FILE, JSON.stringify({ baseCnyRate: rate }, null, 2));
+  } catch (e) {
+    console.error('Ошибка записи rates.json:', e);
+  }
+}
+
+// Конфигурация тарифов
 const CONFIG = {
-  baseCnyRate: 13.5,        // Твой реальный базовый курс юаня (задаешь утром)
-  clientDeliveryPerKg: 1250, // Цена доставки для клиента (твоя база 1000 + 250 заложено в логистику)
-  fixedServiceFee: 150       // Символическая фиксированная комиссия в чеке
+  baseCnyRate: loadRate(),
+  clientDeliveryPerKg: 1250, // Клиентская ставка за 1 кг
+  fixedServiceFee: 150       // Символическая комиссия в чеке
 };
 
-// Сессии пользователей
+// Сессии диалогов
 const userState = new Map();
 
-// Умный расчет: считает чек с «красивой» витриной комиссии
+// Умный расчет стоимости
 function calculateClientReceipt(cnyPrice, weightKg) {
-  // Реальная себестоимость товара в рублях
   const rawCost = cnyPrice * CONFIG.baseCnyRate;
 
-  // Твоя целевая маржа (30% / 20% / 10%)
   let targetMarginPercent = 0.10;
   if (rawCost <= 1000) {
     targetMarginPercent = 0.30;
@@ -29,24 +54,16 @@ function calculateClientReceipt(cnyPrice, weightKg) {
     targetMarginPercent = 0.20;
   }
 
-  // Общая чистая прибыль, которую ты должен забрать с этой сделки
   const totalTargetProfit = rawCost * targetMarginPercent;
-
-  // 1. Прибыль, уже зашитая в доставку (250 руб с каждого кг)
   const deliveryProfit = weightKg * (CONFIG.clientDeliveryPerKg - 1000);
-
-  // 2. Символическая комиссия, которую клиент видит в чеке
   const visibleServiceFee = CONFIG.fixedServiceFee;
 
-  // 3. Остаток прибыли, который нужно незаметно упаковать в курс юаня
   let profitInRate = totalTargetProfit - deliveryProfit - visibleServiceFee;
-  if (profitInRate < 0) profitInRate = 0; // Защита от ухода в минус
+  if (profitInRate < 0) profitInRate = 0;
 
-  // Вычисляем эффективный курс юаня для клиента
   const rateMarkupPerCny = profitInRate / cnyPrice;
   const clientCnyRate = CONFIG.baseCnyRate + rateMarkupPerCny;
 
-  // Итоговые статьи для клиента
   const clientGoodsCost = cnyPrice * clientCnyRate;
   const clientDeliveryCost = weightKg * CONFIG.clientDeliveryPerKg;
   const finalTotal = clientGoodsCost + clientDeliveryCost + visibleServiceFee;
@@ -60,93 +77,144 @@ function calculateClientReceipt(cnyPrice, weightKg) {
   };
 }
 
-// Старт
+// Меню бота
+const mainMenu = Markup.keyboard([
+  ['📦 Рассчитать заказ', 'ℹ️ Условия и FAQ'],
+  ['💬 Связь с менеджером']
+]).resize();
+
 bot.start(async (ctx) => {
   userState.delete(ctx.from.id);
   await ctx.reply(
-    '🇨🇳 *Сервис доставки и выкупа товаров из Китая*\n\n' +
-    '📌 *Как рассчитать стоимость:*\n' +
-    '• Нажми кнопку *«📦 Рассчитать заказ»*\n' +
-    '• Либо напиши в чат одной строкой: `цена вес`\n' +
-    'Пример: `299 1.3` (цена 299¥, вес 1.3 кг).\n\n' +
+    '🇨🇳 *CARGO2828 — Доставка и выкуп товаров из Китая*\n\n' +
+    '📌 *Как рассчитать заказ:*\n' +
+    '• Нажми *«📦 Рассчитать заказ»* и выбери готовый шаблон.\n' +
+    '• Или отправь строкой: `цена вес` (например, `320 1.1`).\n\n' +
     `⚡ Фиксированная комиссия за выкуп: всего *${CONFIG.fixedServiceFee} ₽*!`,
-    {
-      parse_mode: 'Markdown',
-      ...Markup.keyboard([
-        ['📦 Рассчитать заказ', '📋 Тарифы сервиса']
-      ]).resize()
-    }
+    { parse_mode: 'Markdown', ...mainMenu }
   );
 });
 
-// Тарифы
-bot.hears('📋 Тарифы сервиса', async (ctx) => {
+// Условия и FAQ
+bot.hears('ℹ️ Условия и FAQ', async (ctx) => {
   await ctx.reply(
-    `📋 *Прозрачные условия доставки:*\n\n` +
-    `• Доставка под ключ (Карго): *${CONFIG.clientDeliveryPerKg} ₽ / кг* (включая упаковку и трекинг)\n` +
-    `• Комиссия за оформление и выкуп: *всего ${CONFIG.fixedServiceFee} ₽* за весь заказ!\n` +
-    `• Проверка на брак и фотоотчет на складе: *Бесплатно*`,
+    '📋 *ИНФОРМАЦИЯ И УСЛОВИЯ ДОСТАВКИ:*\n\n' +
+    '⏱ *Сроки доставки:*\n' +
+    '• В среднем *20–25 дней* со склада в Китае до Москвы.\n\n' +
+    '📦 *Получение посылки:*\n' +
+    '• Все заказы отправляются по России компанией **СДЭК**.\n' +
+    '• ⚠️ *Доставка СДЭКом оплачивается клиентом отдельно* при получении в пункте выдачи.\n\n' +
+    '🛡 *Упаковка:*\n' +
+    '• Карго упаковывает груз в прочные коробки с плотной фиксацией скотчем и уголками.\n\n' +
+    `💰 *Комиссия сервиса:* фиксированные *${CONFIG.fixedServiceFee} ₽* за выкуп!`,
     { parse_mode: 'Markdown' }
   );
 });
 
-// Пошаговый расчет
+// Связь с менеджером
+bot.hears('💬 Связь с менеджером', async (ctx) => {
+  await ctx.reply(
+    'По всем вопросам, оптовым заказам и нестандартным грузам:\n' +
+    `👉 [Написать менеджеру](https://t.me/${MANAGER_USERNAME})`,
+    { parse_mode: 'Markdown', disable_web_page_preview: true }
+  );
+});
+
+// Запуск расчета
 bot.hears('📦 Рассчитать заказ', async (ctx) => {
   userState.set(ctx.from.id, { step: 'WAITING_PRICE' });
   await ctx.reply(
-    'Введите стоимость товара в **юанях (¥)**:\nНапример: `320`',
+    'Введите стоимость товара в **юанях (¥)**:\nНапример: `280`',
     { parse_mode: 'Markdown' }
   );
 });
 
-// Кнопки категорий веса
+// Выбор категории веса
 bot.action(/cat_(.+)/, async (ctx) => {
   const cat = ctx.match[1];
   await ctx.answerCbQuery();
 
   const state = userState.get(ctx.from.id);
   if (!state || state.step !== 'WAITING_WEIGHT') {
-    return ctx.reply('Начните расчет заново через кнопку меню.');
+    return ctx.reply('Начните расчет заново через меню.');
   }
 
   let weight = 1.0;
-  if (cat === 'shoes') weight = 1.3;
-  else if (cat === 'hoodie') weight = 0.8;
-  else if (cat === 'tshirt') weight = 0.35;
-  else if (cat === 'heavy') weight = 2.0;
+  if (cat === 'tshirt') weight = 0.27; // Футболка 265г
+  else if (cat === 'polo') weight = 0.40;   // Поло 400г
+  else if (cat === 'hoodie') weight = 1.0;  // Кофта 1кг
+  else if (cat === 'backpack') weight = 1.1; // Рюкзак 1.1кг
+  else if (cat === 'shoes') weight = 1.3;   // Обувь 1.3кг
+  else if (cat === 'jacket') weight = 2.0;  // Куртка 2кг
 
   state.weight = weight;
   await sendReceipt(ctx, state.price, state.weight);
-  userState.delete(ctx.from.id);
 });
 
-// Формирование красивого клиентского чека
+// Генерация чека с кнопкой оформления
 async function sendReceipt(ctx, price, weight) {
   const res = calculateClientReceipt(price, weight);
+  const userId = ctx.from.id;
+
+  // Сохраняем расчет в сессии на случай нажатия "Оформить"
+  userState.set(userId, {
+    step: 'ORDER_READY',
+    price,
+    weight,
+    total: res.finalTotal,
+    calcDetails: res
+  });
 
   const receipt =
-    `🧾 *ДЕТАЛИЗАЦИЯ ВАШЕГО ЗАКАЗА:*\n\n` +
-    `• Стоимость товара (${price} ¥ по курсу ${res.clientCnyRate} ₽): *${res.clientGoodsCost} ₽*\n` +
-    `• Доставка под ключ (${weight} кг × ${CONFIG.clientDeliveryPerKg} ₽): *${res.clientDeliveryCost} ₽*\n` +
-    `• Комиссия сервиса за выкуп: *${res.visibleServiceFee} ₽*\n` +
+    `🧾 *РАСЧЕТ СТОИМОСТИ ЗАКАЗА:*\n\n` +
+    `• Товар (${price} ¥ по курсу ${res.clientCnyRate} ₽): *${res.clientGoodsCost} ₽*\n` +
+    `• Доставка в РФ (${weight} кг × ${CONFIG.clientDeliveryPerKg} ₽): *${res.clientDeliveryCost} ₽*\n` +
+    `• Комиссия за оформление: *${res.visibleServiceFee} ₽*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `💰 *ИТОГО К ОПЛАТЕ: ${res.finalTotal} ₽*\n\n` +
-    `_Срок доставки: 14–20 дней до РФ. Страховка включена._`;
+    `_Срок: 20–25 дней до Мск. Отправка по РФ через СДЭК (оплата при получении)._`;
+
+  const inlineKeyboard = Markup.inlineKeyboard([
+    [Markup.button.callback('📩 Оформить этот заказ', 'start_order')]
+  ]);
 
   if (ctx.callbackQuery) {
-    await ctx.editMessageText(receipt, { parse_mode: 'Markdown' });
+    await ctx.editMessageText(receipt, { parse_mode: 'Markdown', ...inlineKeyboard });
   } else {
-    await ctx.reply(receipt, { parse_mode: 'Markdown' });
+    await ctx.reply(receipt, { parse_mode: 'Markdown', ...inlineKeyboard });
   }
 }
 
-// Слушатель текста
+// Старт оформления заказа
+bot.action('start_order', async (ctx) => {
+  await ctx.answerCbQuery();
+  const userId = ctx.from.id;
+  const state = userState.get(userId);
+
+  if (!state || !state.total) {
+    return ctx.reply('Сначала сделайте расчет через кнопку «📦 Рассчитать заказ».');
+  }
+
+  state.step = 'WAITING_ORDER_DETAILS';
+  userState.set(userId, state);
+
+  await ctx.reply(
+    '📝 *Отлично, оформляем заказ!*\n\n' +
+    'Отправьте в одном сообщении:\n' +
+    '1. Ссылку на товар (Poizon, Dewu, Taobao и т.д.)\n' +
+    '2. Нужный размер (европейский или в сантиметрах) и цвет\n\n' +
+    'Пример:\n_https://dw4.co/... размер 42 EU, цвет черный_',
+    { parse_mode: 'Markdown' }
+  );
+});
+
+// Слушатель входящих текстовых сообщений
 bot.on('text', async (ctx, next) => {
   const text = ctx.message.text.trim();
   const userId = ctx.from.id;
+  const state = userState.get(userId);
 
-  // 1. АДМИНКА: обновление базового курса каждое утро
-  // Команда: "курс 13.8" или "курс 14.1"
+  // 1. АДМИНКА: смена курса с сохранением в JSON-файл
   const adminMatch = text.match(/^курс\s+([\d.,]+)$/i);
   if (adminMatch) {
     if (userId !== ADMIN_ID) {
@@ -155,22 +223,52 @@ bot.on('text', async (ctx, next) => {
 
     const rate = parseFloat(adminMatch[1].replace(',', '.'));
     if (isNaN(rate) || rate <= 0) {
-      return ctx.reply('Введите корректное число для курса.');
+      return ctx.reply('Введите корректное число.');
     }
 
     CONFIG.baseCnyRate = rate;
+    saveRate(rate); // Сохраняем в rates.json
+
     return ctx.reply(
-      `✅ *Базовый курс успешно обновлен!*\nУстановлено: *${rate} ₽ / 1 ¥*.\nБот автоматически пересчитал клиентские чеки.`,
+      `✅ *Курс юаня сохранен!*\nТекущий базовый курс: *${rate} ₽ / 1 ¥*.\nЗначение записано в файл и переживет перезапуск сервера.`,
       { parse_mode: 'Markdown' }
     );
   }
 
-  // 2. Пошаговый ввод цены
-  const state = userState.get(userId);
+  // 2. Оформление заказа: получение ссылки и деталей от клиента
+  if (state && state.step === 'WAITING_ORDER_DETAILS') {
+    const userContact = ctx.from.username ? `@${ctx.from.username}` : `tg://user?id=${ctx.from.id}`;
+    const userName = ctx.from.first_name || 'Клиент';
+
+    // Формируем карточку заказа для администратора
+    const adminNotification =
+      `🔥 *НОВАЯ ЗАЯВКА НА ВЫКУП!*\n\n` +
+      `👤 Клиент: ${userName} (${userContact})\n` +
+      `💰 Сумма к оплате: *${state.total} ₽*\n` +
+      `📦 Расчетные параметры: *${state.price} ¥*, вес ~*${state.weight} кг*\n\n` +
+      `📋 *Детали заказа от клиента:*\n${text}`;
+
+    // Отправляем админу в ЛС
+    try {
+      await ctx.telegram.sendMessage(ADMIN_ID, adminNotification, { parse_mode: 'Markdown' });
+    } catch (e) {
+      console.error('Ошибка отправки админу:', e);
+    }
+
+    userState.delete(userId);
+
+    return ctx.reply(
+      '✅ *Заявка успешно отправлена менеджеру!*\n\n' +
+      'Мы проверим наличие товара и свяжемся с вами в Telegram для подтверждения и оплаты.',
+      { parse_mode: 'Markdown', ...mainMenu }
+    );
+  }
+
+  // 3. Пошаговый ввод цены
   if (state && state.step === 'WAITING_PRICE') {
     const price = parseFloat(text.replace(',', '.'));
     if (isNaN(price) || price <= 0) {
-      return ctx.reply('Введи цену числом:');
+      return ctx.reply('Введите цену числом:');
     }
 
     state.price = price;
@@ -178,31 +276,29 @@ bot.on('text', async (ctx, next) => {
     userState.set(userId, state);
 
     return ctx.reply(
-      `Цена: *${price} ¥*.\nВыбери тип товара для оценки веса или напиши вес вручную (например, \`1.2\`):`,
+      `Цена: *${price} ¥*.\nВыбери категорию товара (с учетом упаковки) или укажи вес в кг (например, \`0.4\`):`,
       {
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([
-          [Markup.button.callback('👟 Обувь (~1.3 кг)', 'cat_shoes')],
-          [Markup.button.callback('🧥 Худи / Свитшот (~0.8 кг)', 'cat_hoodie')],
-          [Markup.button.callback('👕 Футболка / Шорты (~0.35 кг)', 'cat_tshirt')],
-          [Markup.button.callback('🥾 Куртка / Пуховик (~2.0 кг)', 'cat_heavy')]
+          [Markup.button.callback('👕 Футболка (~0.27 кг)', 'cat_tshirt'), Markup.button.callback('👔 Поло (~0.40 кг)', 'cat_polo')],
+          [Markup.button.callback('🧥 Кофта / Худи (~1.0 кг)', 'cat_hoodie'), Markup.button.callback('🎒 Рюкзак (~1.1 кг)', 'cat_backpack')],
+          [Markup.button.callback('👟 Обувь (~1.3 кг)', 'cat_shoes'), Markup.button.callback('🥾 Куртка (~2.0 кг)', 'cat_jacket')]
         ])
       }
     );
   }
 
-  // 3. Пошаговый ввод веса
+  // 4. Пошаговый ввод веса вручную
   if (state && state.step === 'WAITING_WEIGHT') {
     const weight = parseFloat(text.replace(',', '.').replace('кг', '').replace('kg', ''));
     if (isNaN(weight) || weight <= 0) {
-      return ctx.reply('Укажи вес числом (например, `0.8`) или нажми на кнопку выше:');
+      return ctx.reply('Введите вес числом (например, `1.1`) или выберите кнопку выше:');
     }
 
-    userState.delete(userId);
     return sendReceipt(ctx, state.price, weight);
   }
 
-  // 4. Экспресс-расчет строкой: "350 1.2"
+  // 5. Быстрый расчет строкой: "350 1.1"
   const quickMatch = text.match(/^(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s*(?:кг|kg))?$/i);
   if (quickMatch) {
     const price = parseFloat(quickMatch[1].replace(',', '.'));
@@ -213,11 +309,11 @@ bot.on('text', async (ctx, next) => {
   return next();
 });
 
-bot.launch().then(() => console.log('>>> БОТ-КАЛЬКУЛЯТОР С УМНОЙ НАЦЕНКОЙ ЗАПУЩЕН! <<<'));
+bot.launch().then(() => console.log('>>> CARGO2828 БОТ С АВТОСОХРАНЕНИЕМ И ЗАКАЗАМИ ЗАПУЩЕН! <<<'));
 
 // Порт для Render
 const port = process.env.PORT || 3000;
-http.createServer((req, res) => res.end('China Calc running')).listen(port, () => {
+http.createServer((req, res) => res.end('CARGO2828 is running')).listen(port, () => {
   console.log(`Сервер слушает порт ${port}`);
 });
 
