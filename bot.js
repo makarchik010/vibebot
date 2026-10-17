@@ -5,7 +5,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // НАСТРОЙКИ
 const DIRECTOR_ID = 1681547868; // Твой Telegram ID
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlw7d3kuH8XKGwV3h7zBZ2RT9bLaOvQMBSfaDpWZSajLOzmBewmcg60xHyMc0gK8EVjQ/exec';
+const GOOGLE_SCRIPT_URL = 'https:/https://script.google.com/macros/library/d/1VAmbcNxIBGL58ZCddkbM1nS677Y2xSpA4I8MJa_fg1UeVkdatYh1GlSs/2/script.google.com/macros/s/AKfycbzlw7d3kuH8XKGwV3h7zBZ2RT9bLaOvQMBSfaDpWZSajLOzmBewmcg60xHyMc0gK8EVjQ/exec';
 
 // Локальный кэш ролей (чтобы не дергать скрипт на каждый клик)
 let rolesCache = new Map();
@@ -16,15 +16,22 @@ async function callSheets(action, payload = {}) {
     const res = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...payload })
+      body: JSON.stringify({ action, ...payload }),
+      redirect: 'follow' // Принудительно переходить по редиректам Google
     });
-    return await res.json();
+    
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (parseErr) {
+      console.error('Apps Script вернул не JSON, а текст/HTML:', text);
+      return null;
+    }
   } catch (e) {
     console.error('Ошибка обращения к Google Таблице:', e);
     return null;
   }
 }
-
 // Загрузка сотрудников при старте
 async function syncRoles() {
   const res = await callSheets('get_employees');
