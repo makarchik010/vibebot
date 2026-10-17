@@ -17,18 +17,18 @@ async function callSheets(action, payload = {}) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, ...payload }),
-      redirect: 'follow' // Принудительно переходить по редиректам Google
+      redirect: 'follow'
     });
     
     const text = await res.text();
     try {
       return JSON.parse(text);
     } catch (parseErr) {
-      console.error('Apps Script вернул не JSON, а текст/HTML:', text);
+      console.error('Ошибка: Google вернул не JSON. Ответ сервера:', text);
       return null;
     }
   } catch (e) {
-    console.error('Ошибка обращения к Google Таблице:', e);
+    console.error('Ошибка сетевого запроса к Google:', e);
     return null;
   }
 }
