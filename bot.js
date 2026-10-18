@@ -6,9 +6,8 @@ const path = require('path');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // НАСТРОЙКИ
-const ADMIN_ID = 123456789; // Твой Telegram ID (число)
-const MANAGER_USERNAME = 'твой_ник_без_собаки'; // Твой username в Telegram
-
+const ADMIN_ID = 1681547868; // Твой Telegram ID (число)
+const MANAGER_USERNAME = 'cargo2828'; // Твой username в Telegram
 // Файл для хранения курса юаня
 const RATES_FILE = path.join(__dirname, 'rates.json');
 
@@ -21,7 +20,7 @@ function loadRate() {
   } catch (e) {
     console.error('Ошибка чтения rates.json:', e);
   }
-  return 13.5; // Дефолтный курс
+  return 13.5;
 }
 
 function saveRate(rate) {
@@ -35,8 +34,8 @@ function saveRate(rate) {
 // Конфигурация тарифов
 const CONFIG = {
   baseCnyRate: loadRate(),
-  clientDeliveryPerKg: 1250, // Ставка доставки для клиента за 1 кг
-  fixedServiceFee: 150       // Символическая комиссия за выкуп
+  clientDeliveryPerKg: 1250,
+  fixedServiceFee: 150
 };
 
 // Сессии пользователей
@@ -76,23 +75,131 @@ function calculateClientReceipt(cnyPrice, weightKg) {
   };
 }
 
-// Главная клавиатура
+// Главная клавиатура с кнопкой размеров
 const mainMenu = Markup.keyboard([
-  ['📦 Рассчитать заказ', 'ℹ️ Условия и FAQ'],
-  ['💬 Связь с менеджером']
+  ['📦 Рассчитать заказ', '📏 Таблица размеров'],
+  ['ℹ️ Условия и FAQ', '💬 Связь с менеджером']
 ]).resize();
+
+// Меню выбора таблиц размеров
+const sizeMenuKeyboard = Markup.inlineKeyboard([
+  [Markup.button.callback('👟 Nike / Jordan', 'size_nike'), Markup.button.callback('👟 Adidas / Yeezy', 'size_adidas')],
+  [Markup.button.callback('👕 Одежда (Китай/Poizon)', 'size_apparel')],
+  [Markup.button.callback('📐 Как правильно измерить стопу', 'size_measure')]
+]);
 
 // Команда /start
 bot.start(async (ctx) => {
   userState.delete(ctx.from.id);
   await ctx.reply(
     '🇨🇳 *CARGO2828 — Выкуп и доставка товаров из Китая*\n\n' +
-    '📌 *Как рассчитать стоимость:*\n' +
-    '• Нажми *«📦 Рассчитать заказ»* и выбери готовый шаблон.\n' +
-    '• Или отправь строкой: `цена вес` (например, `320 1.1`).\n\n' +
-    `⚡ Фиксированная комиссия за выкуп: всего *${CONFIG.fixedServiceFee} ₽*!`,
+    '📌 *Возможности:*\n' +
+    '• *«📦 Рассчитать заказ»* — расчёт стоимости и оформление выкупа.\n' +
+    '• *«📏 Таблица размеров»* — подбор размера обуви и одежды с Poizon.\n' +
+    '• Или отправьте сразу строкой: `цена вес` (например: `450 1.3`).\n\n' +
+    `⚡ Фиксированная комиссия за выкуп: *${CONFIG.fixedServiceFee} ₽*!`,
     { parse_mode: 'Markdown', ...mainMenu }
   );
+});
+
+// Кнопка вызова размерных сеток
+bot.hears('📏 Таблица размеров', async (ctx) => {
+  await ctx.reply(
+    '📏 *РАЗМЕРНЫЕ СЕТКИ И ГИД ПО ВЫБОРУ*\n\n' +
+    'На Poizon все размеры обуви указаны в сетке **EU** (европейский размер).\n\n' +
+    'Выберите бренд или категорию, чтобы посмотреть соответствие сантиметров стопы:',
+    { parse_mode: 'Markdown', ...sizeMenuKeyboard }
+  );
+});
+
+// Обработка колбэков размеров
+bot.action('size_menu', async (ctx) => {
+  await ctx.answerCbQuery();
+  await ctx.editMessageText(
+    '📏 *РАЗМЕРНЫЕ СЕТКИ И ГИД ПО ВЫБОРУ*\n\n' +
+    'На Poizon все размеры обуви указаны в сетке **EU**.\n\n' +
+    'Выберите категорию:',
+    { parse_mode: 'Markdown', ...sizeMenuKeyboard }
+  );
+});
+
+bot.action('size_nike', async (ctx) => {
+  await ctx.answerCbQuery();
+  const text =
+    '👟 *СЕТКА NIKE / JORDAN (МУЖСКАЯ / UNISEX):*\n\n' +
+    '• **EU 40** = US 7.0 = **25.0 см**\n' +
+    '• **EU 40.5** = US 7.5 = **25.5 см**\n' +
+    '• **EU 41** = US 8.0 = **26.0 см**\n' +
+    '• **EU 42** = US 8.5 = **26.5 см**\n' +
+    '• **EU 42.5** = US 9.0 = **27.0 см**\n' +
+    '• **EU 43** = US 9.5 = **27.5 см**\n' +
+    '• **EU 44** = US 10.0 = **28.0 см**\n' +
+    '• **EU 44.5** = US 10.5 = **28.5 см**\n' +
+    '• **EU 45** = US 11.0 = **29.0 см**\n' +
+    '• **EU 46** = US 12.0 = **30.0 см**\n\n' +
+    '💡 _Совет: берите размер строго по длине стопы в см (JP/CM)._';
+
+  await ctx.editMessageText(text, {
+    parse_mode: 'Markdown',
+    ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]])
+  });
+});
+
+bot.action('size_adidas', async (ctx) => {
+  await ctx.answerCbQuery();
+  const text =
+    '👟 *СЕТКА ADIDAS / YEEZY (ОБРАТИТЕ ВНИМАНИЕ НА ДРОБИ):*\n\n' +
+    '• **EU 40** = US 7.0 = **24.5 см**\n' +
+    '• **EU 40 2/3** = US 7.5 = **25.0 см**\n' +
+    '• **EU 41 1/3** = US 8.0 = **25.5 см**\n' +
+    '• **EU 42** = US 8.5 = **26.0 см**\n' +
+    '• **EU 42 2/3** = US 9.0 = **26.5 см**\n' +
+    '• **EU 43 1/3** = US 9.5 = **27.0 см**\n' +
+    '• **EU 44** = US 10.0 = **27.5 см**\n' +
+    '• **EU 44 2/3** = US 10.5 = **28.0 см**\n' +
+    '• **EU 45 1/3** = US 11.0 = **28.5 см**\n' +
+    '• **EU 46** = US 11.5 = **29.0 см**\n\n' +
+    '⚠️ _Внимание: Yeezy 350 / 700 и модели Samba/Campus маломерят — рекомендуется брать на 0.5–1 размер больше._';
+
+  await ctx.editMessageText(text, {
+    parse_mode: 'Markdown',
+    ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]])
+  });
+});
+
+bot.action('size_apparel', async (ctx) => {
+  await ctx.answerCbQuery();
+  const text =
+    '👕 *ТАБЛИЦА РАЗМЕРОВ ОДЕЖДЫ (АЗИЯ / POIZON):*\n\n' +
+    '⚠️ **Главное правило:** китайские локальные бренды маломерят на 1–2 размера относительно европейских стандартов.\n\n' +
+    '• **S:** Рост 160–168 см | Вес 50–60 кг\n' +
+    '• **M:** Рост 168–174 см | Вес 60–68 кг\n' +
+    '• **L:** Рост 174–180 см | Вес 68–78 кг\n' +
+    '• **XL:** Рост 180–185 см | Вес 78–88 кг\n' +
+    '• **2XL:** Рост 185–192 см | Вес 88–100 кг\n\n' +
+    '💡 _Если любите оверсайз или берете плотное худи/куртку — всегда выбирайте на размер больше обычного!_';
+
+  await ctx.editMessageText(text, {
+    parse_mode: 'Markdown',
+    ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]])
+  });
+});
+
+bot.action('size_measure', async (ctx) => {
+  await ctx.answerCbQuery();
+  const text =
+    '📐 *КАК ПРАВИЛЬНО ИЗМЕРИТЬ ДЛИНУ СТОПЫ:*\n\n' +
+    '1. Положите лист бумаги А4 на ровный пол вплотную к стене.\n' +
+    '2. Встаньте ногой на лист так, чтобы пятка слегка касалась стены.\n' +
+    '3. Сделайте отметку карандашом по самому длинному пальцу ноги.\n' +
+    '4. Измерьте линейкой расстояние от края листа до отметки в миллиметрах/сантиметрах.\n' +
+    '5. Сверьте получившееся число с колонкой **см** в таблице размеров бренда.\n\n' +
+    '👌 _Лучше всего замерять стопу вечером, когда нога имеет максимальный объем._';
+
+  await ctx.editMessageText(text, {
+    parse_mode: 'Markdown',
+    ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]])
+  });
 });
 
 // Условия и FAQ
@@ -148,7 +255,7 @@ bot.action(/cat_(.+)/, async (ctx) => {
   await sendReceipt(ctx, state.price, state.weight);
 });
 
-// Формирование и отправка чека
+// Формирование чека
 async function sendReceipt(ctx, price, weight) {
   const res = calculateClientReceipt(price, weight);
   const userId = ctx.from.id;
@@ -198,35 +305,30 @@ bot.action('start_order', async (ctx) => {
     '📝 *Оформление заказа*\n\n' +
     'Отправьте ответным сообщением:\n' +
     '1. Ссылку на товар (Poizon / Dewu / Taobao)\n' +
-    '2. Нужный размер (европейский или в см) и цвет\n\n' +
-    'Пример:\n_https://dw4.co/... размер 42 EU, цвет черный_',
+    '2. Нужный размер (EU или см) и цвет\n\n' +
+    'Пример:\n_https://dw4.co/... размер 42.5 EU, цвет Black_',
     { parse_mode: 'Markdown' }
   );
 });
 
-// Слушатель входящих сообщений
+// Слушатель текстовых сообщений
 bot.on('text', async (ctx, next) => {
   const text = ctx.message.text.trim();
   const userId = ctx.from.id;
   const state = userState.get(userId);
 
-  // 1. АДМИНКА: смена базового курса юаня
+  // 1. АДМИНКА: смена курса
   const adminMatch = text.match(/^курс\s+([\d.,]+)$/i);
   if (adminMatch) {
-    if (userId !== ADMIN_ID) {
-      return ctx.reply('У вас нет прав администратора.');
-    }
-
+    if (userId !== ADMIN_ID) return ctx.reply('У вас нет прав администратора.');
     const rate = parseFloat(adminMatch[1].replace(',', '.'));
-    if (isNaN(rate) || rate <= 0) {
-      return ctx.reply('Введите корректное число.');
-    }
+    if (isNaN(rate) || rate <= 0) return ctx.reply('Введите корректное число.');
 
     CONFIG.baseCnyRate = rate;
     saveRate(rate);
 
     return ctx.reply(
-      `✅ *Курс юаня обновлен!*\nТекущий базовый курс: *${rate} ₽ / 1 ¥*.\nЗначение сохранено в файл и не сбросится при перезапуске.`,
+      `✅ *Курс юаня обновлен!*\nТекущий базовый курс: *${rate} ₽ / 1 ¥*.\nЗначение сохранено.`,
       { parse_mode: 'Markdown' }
     );
   }
@@ -261,9 +363,7 @@ bot.on('text', async (ctx, next) => {
   // 3. Пошаговый ввод цены
   if (state && state.step === 'WAITING_PRICE') {
     const price = parseFloat(text.replace(',', '.'));
-    if (isNaN(price) || price <= 0) {
-      return ctx.reply('Введите цену числом (например, `350`):');
-    }
+    if (isNaN(price) || price <= 0) return ctx.reply('Введите цену числом (например, `350`):');
 
     state.price = price;
     state.step = 'WAITING_WEIGHT';
@@ -285,10 +385,7 @@ bot.on('text', async (ctx, next) => {
   // 4. Пошаговый ввод веса числом
   if (state && state.step === 'WAITING_WEIGHT') {
     const weight = parseFloat(text.replace(',', '.').replace('кг', '').replace('kg', ''));
-    if (isNaN(weight) || weight <= 0) {
-      return ctx.reply('Введите вес числом (например, `1.1`) или выберите категорию выше:');
-    }
-
+    if (isNaN(weight) || weight <= 0) return ctx.reply('Введите вес числом (например, `1.1`):');
     return sendReceipt(ctx, state.price, weight);
   }
 
@@ -303,9 +400,9 @@ bot.on('text', async (ctx, next) => {
   return next();
 });
 
-bot.launch().then(() => console.log('>>> CARGO2828 БОТ УСПЕШНО ЗАПУЩЕН! <<<'));
+bot.launch().then(() => console.log('>>> CARGO2828 БОТ С РАЗМЕРНОЙ СЕТКОЙ ЗАПУЩЕН! <<<'));
 
-// Порт для поддержания активности на Render
+// Поддержание соединения на Render
 const port = process.env.PORT || 3000;
 http.createServer((req, res) => res.end('CARGO2828 is active')).listen(port, () => {
   console.log(`Сервер слушает порт ${port}`);
