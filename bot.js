@@ -1,295 +1,313 @@
 const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // НАСТРОЙКИ
-const DIRECTOR_ID = 1681547868; // Твой Telegram ID
-const GOOGLE_SCRIPT_URL = 'https:/https://script.google.com/macros/library/d/1VAmbcNxIBGL58ZCddkbM1nS677Y2xSpA4I8MJa_fg1UeVkdatYh1GlSs/2/script.google.com/macros/s/AKfycbzlw7d3kuH8XKGwV3h7zBZ2RT9bLaOvQMBSfaDpWZSajLOzmBewmcg60xHyMc0gK8EVjQ/exec';
+const ADMIN_ID = 123456789; // Твой Telegram ID (число)
+const MANAGER_USERNAME = 'твой_ник_без_собаки'; // Твой username в Telegram
 
-// Локальный кэш ролей (чтобы не дергать скрипт на каждый клик)
-let rolesCache = new Map();
+// Файл для хранения курса юаня
+const RATES_FILE = path.join(__dirname, 'rates.json');
 
-// Функция обращения к Google Таблице
-async function callSheets(action, payload = {}) {
+function loadRate() {
   try {
-    const res = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...payload }),
-      redirect: 'follow'
-    });
-    
-    const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch (parseErr) {
-      console.error('Ошибка: Google вернул не JSON. Ответ сервера:', text);
-      return null;
+    if (fs.existsSync(RATES_FILE)) {
+      const data = JSON.parse(fs.readFileSync(RATES_FILE, 'utf8'));
+      if (data && data.baseCnyRate) return data.baseCnyRate;
     }
   } catch (e) {
-    console.error('Ошибка сетевого запроса к Google:', e);
-    return null;
+    console.error('Ошибка чтения rates.json:', e);
   }
-}
-// Загрузка сотрудников при старте
-async function syncRoles() {
-  const res = await callSheets('get_employees');
-  if (res && res.status === 'ok') {
-    rolesCache.clear();
-    res.employees.forEach(emp => {
-      rolesCache.set(String(emp.id), emp.role);
-    });
-  }
-  // Директор всегда вшит намертво
-  rolesCache.set(String(DIRECTOR_ID), 'директор');
+  return 13.5; // Дефолтный курс
 }
 
-// Определение роли пользователя
-function getUserRole(userId) {
-  if (userId === DIRECTOR_ID) return 'директор';
-  return rolesCache.get(String(userId)) || 'гость';
+function saveRate(rate) {
+  try {
+    fs.writeFileSync(RATES_FILE, JSON.stringify({ baseCnyRate: rate }, null, 2));
+  } catch (e) {
+    console.error('Ошибка записи rates.json:', e);
+  }
 }
 
-// Генерация клавиатуры под роль
-function getMenuByRole(role) {
-  if (role === 'директор') {
-    return Markup.keyboard([
-      ['📊 Полный P&L отчет', '💰 Текущий баланс'],
-      ['➕ Добавить расход', '📈 Добавить доход'],
-      ['👥 Управление штатом']
-    ]).resize();
-  }
-  if (role === 'бухгалтер') {
-    return Markup.keyboard([
-      ['📊 Отчет по кассе', '💰 Текущий баланс'],
-      ['➕ Добавить расход', '📈 Добавить доход']
-    ]).resize();
-  }
-  if (role === 'сотрудник') {
-    return Markup.keyboard([
-      ['➕ Добавить расход', '📈 Добавить доход']
-    ]).resize();
-  }
-  return Markup.keyboard([['🔑 Запросить доступ']]).resize();
-}
+// Конфигурация тарифов
+const CONFIG = {
+  baseCnyRate: loadRate(),
+  clientDeliveryPerKg: 1250, // Ставка доставки для клиента за 1 кг
+  fixedServiceFee: 150       // Символическая комиссия за выкуп
+};
 
-// Сессии для пошагового внесения
+// Сессии пользователей
 const userState = new Map();
 
-// Стартовое приветствие
+// Расчет стоимости
+function calculateClientReceipt(cnyPrice, weightKg) {
+  const rawCost = cnyPrice * CONFIG.baseCnyRate;
+
+  let targetMarginPercent = 0.10;
+  if (rawCost <= 1000) {
+    targetMarginPercent = 0.30;
+  } else if (rawCost <= 5000) {
+    targetMarginPercent = 0.20;
+  }
+
+  const totalTargetProfit = rawCost * targetMarginPercent;
+  const deliveryProfit = weightKg * (CONFIG.clientDeliveryPerKg - 1000);
+  const visibleServiceFee = CONFIG.fixedServiceFee;
+
+  let profitInRate = totalTargetProfit - deliveryProfit - visibleServiceFee;
+  if (profitInRate < 0) profitInRate = 0;
+
+  const rateMarkupPerCny = profitInRate / cnyPrice;
+  const clientCnyRate = CONFIG.baseCnyRate + rateMarkupPerCny;
+
+  const clientGoodsCost = cnyPrice * clientCnyRate;
+  const clientDeliveryCost = weightKg * CONFIG.clientDeliveryPerKg;
+  const finalTotal = clientGoodsCost + clientDeliveryCost + visibleServiceFee;
+
+  return {
+    clientCnyRate: clientCnyRate.toFixed(2),
+    clientGoodsCost: Math.round(clientGoodsCost),
+    clientDeliveryCost: Math.round(clientDeliveryCost),
+    visibleServiceFee,
+    finalTotal: Math.round(finalTotal)
+  };
+}
+
+// Главная клавиатура
+const mainMenu = Markup.keyboard([
+  ['📦 Рассчитать заказ', 'ℹ️ Условия и FAQ'],
+  ['💬 Связь с менеджером']
+]).resize();
+
+// Команда /start
 bot.start(async (ctx) => {
+  userState.delete(ctx.from.id);
+  await ctx.reply(
+    '🇨🇳 *CARGO2828 — Выкуп и доставка товаров из Китая*\n\n' +
+    '📌 *Как рассчитать стоимость:*\n' +
+    '• Нажми *«📦 Рассчитать заказ»* и выбери готовый шаблон.\n' +
+    '• Или отправь строкой: `цена вес` (например, `320 1.1`).\n\n' +
+    `⚡ Фиксированная комиссия за выкуп: всего *${CONFIG.fixedServiceFee} ₽*!`,
+    { parse_mode: 'Markdown', ...mainMenu }
+  );
+});
+
+// Условия и FAQ
+bot.hears('ℹ️ Условия и FAQ', async (ctx) => {
+  await ctx.reply(
+    '📋 *ИНФОРМАЦИЯ И УСЛОВИЯ ДОСТАВКИ:*\n\n' +
+    '⏱ *Сроки доставки:*\n' +
+    '• В среднем *20–25 дней* со склада в Китае до Москвы.\n\n' +
+    '📦 *Получение посылки:*\n' +
+    '• Все заказы отправляются по России компанией **СДЭК**.\n' +
+    '• ⚠️ *Доставка СДЭКом оплачивается клиентом отдельно* при получении в пункте выдачи.\n\n' +
+    '🛡 *Упаковка:*\n' +
+    '• Карго упаковывает груз в прочные коробки с плотной фиксацией скотчем и защитными уголками.\n\n' +
+    `💰 *Комиссия сервиса:* фиксированные *${CONFIG.fixedServiceFee} ₽* за выкуп!`,
+    { parse_mode: 'Markdown' }
+  );
+});
+
+// Связь с менеджером
+bot.hears('💬 Связь с менеджером', async (ctx) => {
+  await ctx.reply(
+    'По всем вопросам, оптовым заказам и нестандартным грузам:\n' +
+    `👉 [Написать менеджеру](https://t.me/${MANAGER_USERNAME})`,
+    { parse_mode: 'Markdown', disable_web_page_preview: true }
+  );
+});
+
+// Запуск пошагового расчета
+bot.hears('📦 Рассчитать заказ', async (ctx) => {
+  userState.set(ctx.from.id, { step: 'WAITING_PRICE' });
+  await ctx.reply('Введите стоимость товара в **юанях (¥)**:\nНапример: `280`', { parse_mode: 'Markdown' });
+});
+
+// Выбор категории веса
+bot.action(/cat_(.+)/, async (ctx) => {
+  const cat = ctx.match[1];
+  await ctx.answerCbQuery();
+
+  const state = userState.get(ctx.from.id);
+  if (!state || state.step !== 'WAITING_WEIGHT') {
+    return ctx.reply('Начните расчет заново через меню.');
+  }
+
+  let weight = 1.0;
+  if (cat === 'tshirt') weight = 0.27;
+  else if (cat === 'polo') weight = 0.40;
+  else if (cat === 'hoodie') weight = 1.0;
+  else if (cat === 'backpack') weight = 1.1;
+  else if (cat === 'shoes') weight = 1.3;
+  else if (cat === 'jacket') weight = 2.0;
+
+  state.weight = weight;
+  await sendReceipt(ctx, state.price, state.weight);
+});
+
+// Формирование и отправка чека
+async function sendReceipt(ctx, price, weight) {
+  const res = calculateClientReceipt(price, weight);
   const userId = ctx.from.id;
-  const role = getUserRole(userId);
 
-  if (role === 'директор') {
-    await ctx.reply(
-      '👑 *Добро пожаловать, Директор!*\n\n' +
-      'Вам доступен полный контроль финансов, отчёты и управление сотрудниками.\n\n' +
-      '💡 *Быстрый ввод расходов/доходов:*\n' +
-      '• `минус 1500 скотч и коробки`\n' +
-      '• `+ 25000 оплата за заказ #102`',
-      { parse_mode: 'Markdown', ...getMenuByRole(role) }
-    );
-  } else if (role === 'бухгалтер') {
-    await ctx.reply(
-      '💼 *Панель Бухгалтера*\n\n' +
-      'Вы можете просматривать общую кассу и фиксировать финансовые операции.',
-      { parse_mode: 'Markdown', ...getMenuByRole(role) }
-    );
-  } else if (role === 'сотрудник') {
-    await ctx.reply(
-      '👷 *Рабочий кабинет сотрудника*\n\n' +
-      'Здесь вы можете быстро фиксировать рабочие расходы и поступления.',
-      { parse_mode: 'Markdown', ...getMenuByRole(role) }
-    );
-  } else {
-    await ctx.reply(
-      `👋 Здравствуйте, ${ctx.from.first_name}!\n\n` +
-      `У вас пока нет доступа к финансовой системе.\n` +
-      `Ваш ID: \`${userId}\`\n\n` +
-      `Передайте этот ID директору для выдачи прав.`,
-      { parse_mode: 'Markdown', ...getMenuByRole('гость') }
-    );
-  }
-});
+  userState.set(userId, {
+    step: 'ORDER_READY',
+    price,
+    weight,
+    total: res.finalTotal,
+    calcDetails: res
+  });
 
-// Кнопка P&L отчета (Директор)
-bot.hears('📊 Полный P&L отчет', async (ctx) => {
-  const role = getUserRole(ctx.from.id);
-  if (role !== 'директор') return ctx.reply('⛔ Доступ разрешён только директору.');
-
-  await ctx.reply('⏳ Формирую отчет из Google Таблицы...');
-  const stats = await callSheets('get_stats');
-
-  if (!stats || stats.status !== 'ok') {
-    return ctx.reply('Ошибка получения данных.');
-  }
-
-  const pnl =
-    `📊 *ОТЧЁТ О ПРИБЫЛЯХ И УБЫТКАХ (P&L):*\n\n` +
-    `📈 Общий доход: *${stats.income.toLocaleString('ru-RU')} ₽*\n` +
-    `📉 Общий расход: *${stats.expense.toLocaleString('ru-RU')} ₽*\n` +
+  const receipt =
+    `🧾 *РАСЧЕТ СТОИМОСТИ ЗАКАЗА:*\n\n` +
+    `• Товар (${price} ¥ по курсу ${res.clientCnyRate} ₽): *${res.clientGoodsCost} ₽*\n` +
+    `• Доставка в РФ (${weight} кг × ${CONFIG.clientDeliveryPerKg} ₽): *${res.clientDeliveryCost} ₽*\n` +
+    `• Комиссия за оформление: *${res.visibleServiceFee} ₽*\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `💰 *ЧИСТАЯ ПРИБЫЛЬ: ${stats.balance.toLocaleString('ru-RU')} ₽*\n` +
-    `📝 Всего операций: *${stats.count}*`;
+    `💰 *ИТОГО К ОПЛАТЕ: ${res.finalTotal} ₽*\n\n` +
+    `_Срок: 20–25 дней до Мск. Отправка по РФ через СДЭК (оплата при получении)._`;
 
-  await ctx.reply(pnl, { parse_mode: 'Markdown' });
-});
+  const inlineKeyboard = Markup.inlineKeyboard([
+    [Markup.button.callback('📩 Оформить этот заказ', 'start_order')]
+  ]);
 
-// Кнопка баланса (Директор / Бухгалтер)
-bot.hears(['💰 Текущий баланс', '📊 Отчет по кассе'], async (ctx) => {
-  const role = getUserRole(ctx.from.id);
-  if (role !== 'директор' && role !== 'бухгалтер') {
-    return ctx.reply('⛔ У вас нет доступа к просмотру кассы.');
+  if (ctx.callbackQuery) {
+    await ctx.editMessageText(receipt, { parse_mode: 'Markdown', ...inlineKeyboard });
+  } else {
+    await ctx.reply(receipt, { parse_mode: 'Markdown', ...inlineKeyboard });
+  }
+}
+
+// Нажатие на кнопку "Оформить"
+bot.action('start_order', async (ctx) => {
+  await ctx.answerCbQuery();
+  const userId = ctx.from.id;
+  const state = userState.get(userId);
+
+  if (!state || !state.total) {
+    return ctx.reply('Сначала сделайте расчет через кнопку «📦 Рассчитать заказ».');
   }
 
-  const stats = await callSheets('get_stats');
-  if (!stats) return ctx.reply('Не удалось получить баланс.');
+  state.step = 'WAITING_ORDER_DETAILS';
+  userState.set(userId, state);
 
   await ctx.reply(
-    `💵 *Остаток в кассе компании:* *${stats.balance.toLocaleString('ru-RU')} ₽*`,
+    '📝 *Оформление заказа*\n\n' +
+    'Отправьте ответным сообщением:\n' +
+    '1. Ссылку на товар (Poizon / Dewu / Taobao)\n' +
+    '2. Нужный размер (европейский или в см) и цвет\n\n' +
+    'Пример:\n_https://dw4.co/... размер 42 EU, цвет черный_',
     { parse_mode: 'Markdown' }
   );
 });
 
-// Добавить расход
-bot.hears('➕ Добавить расход', async (ctx) => {
-  const role = getUserRole(ctx.from.id);
-  if (role === 'гость') return ctx.reply('⛔ Нет доступа.');
-
-  userState.set(ctx.from.id, { step: 'WAITING_EXPENSE_AMOUNT' });
-  await ctx.reply('Введите сумму расхода в рублях:\nНапример: `1450`');
-});
-
-// Добавить доход
-bot.hears('📈 Добавить доход', async (ctx) => {
-  const role = getUserRole(ctx.from.id);
-  if (role === 'гость') return ctx.reply('⛔ Нет доступа.');
-
-  userState.set(ctx.from.id, { step: 'WAITING_INCOME_AMOUNT' });
-  await ctx.reply('Введите сумму дохода в рублях:\nНапример: `12000`');
-});
-
-// Управление персоналом (Только Директор)
-bot.hears('👥 Управление штатом', async (ctx) => {
-  if (getUserRole(ctx.from.id) !== 'директор') return;
-
-  await ctx.reply(
-    '👥 *Управление правами доступа*\n\n' +
-    'Чтобы добавить или изменить роль сотрудника, отправь команду:\n' +
-    '`/role ID_пользователя роль`\n\n' +
-    'Доступные роли:\n' +
-    '• `бухгалтер`\n' +
-    '• `сотрудник`\n' +
-    '• `гость` (заблокировать)\n\n' +
-    'Пример:\n`/role 987654321 бухгалтер`',
-    { parse_mode: 'Markdown' }
-  );
-});
-
-// Слушатель текстовых команд
+// Слушатель входящих сообщений
 bot.on('text', async (ctx, next) => {
   const text = ctx.message.text.trim();
   const userId = ctx.from.id;
-  const role = getUserRole(userId);
-  const userName = ctx.from.username ? `@${ctx.from.username}` : (ctx.from.first_name || 'Сотрудник');
-
-  // 1. Команда назначения роли (только для директора)
-  const roleMatch = text.match(/^\/role\s+(\d+)\s+(бухгалтер|сотрудник|директор|гость)$/i);
-  if (roleMatch) {
-    if (role !== 'директор') return ctx.reply('⛔ Доступ запрещён.');
-
-    const targetId = roleMatch[1];
-    const targetRole = roleMatch[2].toLowerCase();
-
-    await ctx.reply(`Сохраняю изменения для пользователя ${targetId}...`);
-    const res = await callSheets('upsert_employee', {
-      userId: targetId,
-      userName: `ID_${targetId}`,
-      role: targetRole
-    });
-
-    if (res && res.status === 'ok') {
-      rolesCache.set(String(targetId), targetRole);
-      return ctx.reply(`✅ Пользователю \`${targetId}\` успешно выдана роль: *${targetRole}*`, { parse_mode: 'Markdown' });
-    } else {
-      return ctx.reply('Ошибка при обновлении таблицы.');
-    }
-  }
-
-  // 2. Умный экспресс-ввод: "минус 500 такси" или "+ 15000 продажа"
-  const quickExpense = text.match(/^(?:минус|расход|-)\s*(\d+(?:[.,]\d+)?)\s*(.*)$/i);
-  const quickIncome = text.match(/^(?:плюс|доход|\+)\s*(\d+(?:[.,]\d+)?)\s*(.*)$/i);
-
-  if ((quickExpense || quickIncome) && role !== 'гость') {
-    const isIncome = !!quickIncome;
-    const amount = parseFloat((isIncome ? quickIncome[1] : quickExpense[1]).replace(',', '.'));
-    const comment = (isIncome ? quickIncome[2] : quickExpense[2]).trim() || 'Без комментария';
-    const type = isIncome ? 'Доход' : 'Расход';
-
-    await ctx.reply(`Записываю операцию: ${type} ${amount} ₽...`);
-
-    const result = await callSheets('add_transaction', {
-      userName,
-      userRole: role,
-      type,
-      category: isIncome ? 'Выручка' : 'Операционные расходы',
-      amount,
-      comment
-    });
-
-    if (result && result.status === 'ok') {
-      return ctx.reply(`✅ *${type} учтён!*\n💰 Сумма: *${amount.toLocaleString('ru-RU')} ₽*\n📝 Назначение: ${comment}`, { parse_mode: 'Markdown' });
-    } else {
-      return ctx.reply('❌ Ошибка связи с таблицей.');
-    }
-  }
-
-  // 3. Обработка шагов по кнопкам
   const state = userState.get(userId);
-  if (state && (state.step === 'WAITING_EXPENSE_AMOUNT' || state.step === 'WAITING_INCOME_AMOUNT')) {
-    const amount = parseFloat(text.replace(',', '.'));
-    if (isNaN(amount) || amount <= 0) return ctx.reply('Введите корректную сумму числом:');
 
-    const isIncome = state.step === 'WAITING_INCOME_AMOUNT';
-    state.amount = amount;
-    state.type = isIncome ? 'Доход' : 'Расход';
-    state.step = 'WAITING_COMMENT';
-    userState.set(userId, state);
+  // 1. АДМИНКА: смена базового курса юаня
+  const adminMatch = text.match(/^курс\s+([\d.,]+)$/i);
+  if (adminMatch) {
+    if (userId !== ADMIN_ID) {
+      return ctx.reply('У вас нет прав администратора.');
+    }
 
-    return ctx.reply('Укажите комментарий / статью (например, «Упаковка товара» или «Оплата от клиента»):');
+    const rate = parseFloat(adminMatch[1].replace(',', '.'));
+    if (isNaN(rate) || rate <= 0) {
+      return ctx.reply('Введите корректное число.');
+    }
+
+    CONFIG.baseCnyRate = rate;
+    saveRate(rate);
+
+    return ctx.reply(
+      `✅ *Курс юаня обновлен!*\nТекущий базовый курс: *${rate} ₽ / 1 ¥*.\nЗначение сохранено в файл и не сбросится при перезапуске.`,
+      { parse_mode: 'Markdown' }
+    );
   }
 
-  if (state && state.step === 'WAITING_COMMENT') {
-    const comment = text;
-    const { amount, type } = state;
+  // 2. Получение ссылки и данных заказа от клиента
+  if (state && state.step === 'WAITING_ORDER_DETAILS') {
+    const userContact = ctx.from.username ? `@${ctx.from.username}` : `tg://user?id=${ctx.from.id}`;
+    const userName = ctx.from.first_name || 'Клиент';
+
+    const adminNotification =
+      `🔥 *НОВАЯ ЗАЯВКА НА ВЫКУП!*\n\n` +
+      `👤 Клиент: ${userName} (${userContact})\n` +
+      `💰 Сумма к оплате: *${state.total} ₽*\n` +
+      `📦 Параметры: *${state.price} ¥*, вес ~*${state.weight} кг*\n\n` +
+      `📋 *Детали заказа:*\n${text}`;
+
+    try {
+      await ctx.telegram.sendMessage(ADMIN_ID, adminNotification, { parse_mode: 'Markdown' });
+    } catch (e) {
+      console.error('Ошибка отправки админу:', e);
+    }
+
     userState.delete(userId);
 
-    await ctx.reply('Вношу в таблицу...');
-    await callSheets('add_transaction', {
-      userName,
-      userRole: role,
-      type,
-      category: type === 'Доход' ? 'Продажи' : 'Текущие расходы',
-      amount,
-      comment
-    });
+    return ctx.reply(
+      '✅ *Заявка успешно передана менеджеру!*\n\n' +
+      'Мы проверим наличие товара и свяжемся с вами в Telegram для подтверждения и выкупа.',
+      { parse_mode: 'Markdown', ...mainMenu }
+    );
+  }
 
-    return ctx.reply(`✅ *${type} успешно сохранён!*\n• Сумма: *${amount} ₽*\n• Описание: *${comment}*`, { parse_mode: 'Markdown' });
+  // 3. Пошаговый ввод цены
+  if (state && state.step === 'WAITING_PRICE') {
+    const price = parseFloat(text.replace(',', '.'));
+    if (isNaN(price) || price <= 0) {
+      return ctx.reply('Введите цену числом (например, `350`):');
+    }
+
+    state.price = price;
+    state.step = 'WAITING_WEIGHT';
+    userState.set(userId, state);
+
+    return ctx.reply(
+      `Цена: *${price} ¥*.\nВыбери категорию товара или введи вес в кг (например, \`0.4\`):`,
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('👕 Футболка (~0.27 кг)', 'cat_tshirt'), Markup.button.callback('👔 Поло (~0.40 кг)', 'cat_polo')],
+          [Markup.button.callback('🧥 Кофта / Худи (~1.0 кг)', 'cat_hoodie'), Markup.button.callback('🎒 Рюкзак (~1.1 кг)', 'cat_backpack')],
+          [Markup.button.callback('👟 Обувь (~1.3 кг)', 'cat_shoes'), Markup.button.callback('🥾 Куртка (~2.0 кг)', 'cat_jacket')]
+        ])
+      }
+    );
+  }
+
+  // 4. Пошаговый ввод веса числом
+  if (state && state.step === 'WAITING_WEIGHT') {
+    const weight = parseFloat(text.replace(',', '.').replace('кг', '').replace('kg', ''));
+    if (isNaN(weight) || weight <= 0) {
+      return ctx.reply('Введите вес числом (например, `1.1`) или выберите категорию выше:');
+    }
+
+    return sendReceipt(ctx, state.price, weight);
+  }
+
+  // 5. Быстрый расчет строкой: "350 1.1"
+  const quickMatch = text.match(/^(\d+(?:[.,]\d+)?)\s+(\d+(?:[.,]\d+)?)(?:\s*(?:кг|kg))?$/i);
+  if (quickMatch) {
+    const price = parseFloat(quickMatch[1].replace(',', '.'));
+    const weight = parseFloat(quickMatch[2].replace(',', '.'));
+    return sendReceipt(ctx, price, weight);
   }
 
   return next();
 });
 
-// Запуск бота
-syncRoles().then(() => {
-  bot.launch().then(() => console.log('>>> ФИНАНСОВЫЙ АГЕНТ ЗАПУЩЕН! <<<'));
-});
+bot.launch().then(() => console.log('>>> CARGO2828 БОТ УСПЕШНО ЗАПУЩЕН! <<<'));
 
-// Сервер для Render
+// Порт для поддержания активности на Render
 const port = process.env.PORT || 3000;
-http.createServer((req, res) => res.end('Finance CFO Bot is running')).listen(port, () => {
+http.createServer((req, res) => res.end('CARGO2828 is active')).listen(port, () => {
   console.log(`Сервер слушает порт ${port}`);
 });
 
