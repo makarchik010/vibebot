@@ -1,3 +1,6 @@
+$token = "8622272382:AAGdyv-_B80g4fRY7zA91N5QbFuSiMiBcak"
+
+$code = @"
 import os
 import asyncio
 import logging
@@ -9,8 +12,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
-# ВСТАВЬ СЮДА ТОКЕН ОТ BOTFATHER
-TOKEN = "YOUR_BOT_TOKEN_HERE"
+TOKEN = "$token"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -18,9 +20,6 @@ dp = Dispatcher()
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
-
-
-# --- ПОИСК И ПАРСИНГ РЕШЕНИЙ ---
 
 async def search_gdz_page(query: str) -> str | None:
     search_query = f"{query} гдз решебник онлайн"
@@ -36,7 +35,6 @@ async def search_gdz_page(query: str) -> str | None:
     except Exception as e:
         logging.error(f"Ошибка при поиске: {e}")
     return None
-
 
 async def extract_solution_images(url: str) -> list[str]:
     images = []
@@ -66,14 +64,10 @@ async def extract_solution_images(url: str) -> list[str]:
                         images.append(f"https:{src}")
                     elif src.startswith("http"):
                         images.append(src)
-
     except Exception as e:
         logging.error(f"Ошибка при парсинге страницы {url}: {e}")
 
     return list(dict.fromkeys(images))
-
-
-# --- ОБРАБОТЧИКИ СООБЩЕНИЙ ---
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
@@ -87,7 +81,6 @@ async def cmd_start(message: Message):
         "• `9 физика Перышкин упр 14`",
         parse_mode="Markdown"
     )
-
 
 @dp.message(F.text)
 async def handle_user_query(message: Message):
@@ -121,17 +114,11 @@ async def handle_user_query(message: Message):
             disable_web_page_preview=False
         )
 
-
-# --- ВЕБ-СЕРВЕР ДЛЯ FREE WEB SERVICE НА RENDER ---
-
 async def handle_ping(request):
     return web.Response(text="Bot is running!")
 
-
 async def main():
     logging.basicConfig(level=logging.INFO)
-
-    # Запускаем фоновый веб-сервер, чтобы Render не вырубал бота
     app = web.Application()
     app.router.add_get("/", handle_ping)
     runner = web.AppRunner(app)
@@ -139,10 +126,13 @@ async def main():
     port = int(os.environ.get("PORT", 8080))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
-
-    # Запускаем Telegram-бота
     await dp.start_polling(bot)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
+"@
+
+Set-Content -Path solver_bot.py -Value $code -Encoding UTF8
+git add solver_bot.py
+git commit -m "Update bot token"
+git push
