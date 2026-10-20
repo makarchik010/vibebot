@@ -1,215 +1,194 @@
-const { Telegraf, Markup } = require('telegraf');
-const http = require('http');
+// Вставь ID своей таблицы между кавычками ниже 👇
+const SPREADSHEET_ID = 'https://script.google.com/macros/s/AKfycbyf7taWVt-_lN6bJpUeCPRsI9VlJQpK1xw4UeoR6EKrutali-y2UQXRicxYF2DfIocf/exec';
 
-// Токен второго бота берем из переменной среды
-const bot = new Telegraf(process.env.TABLE_BOT_TOKEN);
+function getSS() {
+  if (SPREADSHEET_ID && SPREADSHEET_ID.length > 10) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
 
-// НАСТРОЙКИ
-// Вставь сюда URL, полученный после развертывания Google Apps Script
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyf7taWVt-_lN6bJpUeCPRsI9VlJQpK1xw4UeoR6EKrutali-y2UQXRicxYF2DfIocf/exec';
-const ADMIN_ID = 1681547868;
+function FIX_MY_TABLE() {
+  const ss = getSS();
+  const sheetProd = ss.getSheetByName('Товары');
+  const sheetDeliv = ss.getSheetByName('Доставка');
+  
+  if (!sheetProd || !sheetDeliv) {
+    Logger.log('ОШИБКА: Листы не найдены!');
+    return;
+  }
+  
+  const lastRow = Math.max(sheetProd.getLastRow(), sheetDeliv.getLastRow());
+  if (lastRow < 3) return;
+  
+  const numRows = lastRow - 2;
 
-// Сессии для пошагового ввода данных
-const userSessions = new Map();
+  sheetProd.getRange(3, 7, numRows, 1).setFormulaR1C1('=RC[-2]*RC[-1]');
+  sheetProd.getRange(3, 9, numRows, 1).setFormulaR1C1('=IFERROR(VLOOKUP(RC[-8], Доставка!C1:C8, 8, FALSE), 0)');
+  sheetProd.getRange(3, 10, numRows, 1).setFormulaR1C1('=RC[-3]+RC[-1]');
+  sheetProd.getRange(3, 13, numRows, 1).setFormulaR1C1('=IF(RC[-1]="Продано", RC[-2]-RC[-3], "")');
 
-// Главное меню
-const adminMenu = Markup.keyboard([
-  ['➕ Добавить товар'],
-  ['📦 Внести Карго', '🚚 Внести СДЭК'],
-  ['💰 Зафиксировать продажу', '❌ Отмена']
-]).resize();
+  sheetProd.getRange("E2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetProd.getRange("G2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetProd.getRange("H2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetProd.getRange("I2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetProd.getRange("J2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetProd.getRange("K2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetProd.getRange("M2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
 
-// Отправка запроса в Google Apps Script
-async function sendToGoogleSheets(payload) {
+  sheetDeliv.getRange(3, 1, numRows, 1).setFormulaR1C1('=Товары!RC');
+  sheetDeliv.getRange(3, 2, numRows, 1).setFormulaR1C1('=Товары!RC');
+  sheetDeliv.getRange(3, 3, numRows, 1).setFormulaR1C1('=Товары!RC');
+  sheetDeliv.getRange(3, 4, numRows, 1).setFormulaR1C1('=Товары!RC[4]');
+  
+  sheetDeliv.getRange(3, 5, numRows, 1).setFormulaR1C1('=IFERROR(RC[-1]/SUMIFS(C4, C3, RC[-2])*VLOOKUP(RC[-2], Накладные!C1:C3, 2, FALSE), 0)');
+  sheetDeliv.getRange(3, 6, numRows, 1).setFormulaR1C1('=IFERROR(RC[-2]/SUMIFS(C4, C3, RC[-3])*VLOOKUP(RC[-3], Накладные!C1:C3, 3, FALSE), 0)');
+  sheetDeliv.getRange(3, 7, numRows, 1).setFormulaR1C1('=IFERROR(RC[-3]/SUMIFS(C4, C3, RC[-4])*VLOOKUP(RC[-4], Накладные!C1:C5, 5, FALSE), 0)');
+  sheetDeliv.getRange(3, 8, numRows, 1).setFormulaR1C1('=RC[-2]+RC[-1]');
+
+  sheetDeliv.getRange("D2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetDeliv.getRange("E2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetDeliv.getRange("F2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetDeliv.getRange("G2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+  sheetDeliv.getRange("H2").setFormulaR1C1('=SUM(R[1]C:R[500]C)');
+
+  SpreadsheetApp.flush();
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.tryLock(15000);
+  
   try {
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      redirect: 'follow'
-    });
-    return await response.json();
+    if (!e || !e.postData || !e.postData.contents) {
+      return response({ status: 'error', error: 'Пустой запрос' });
+    }
+
+    const data = JSON.parse(e.postData.contents);
+    const ss = getSS();
+    
+    if (data.action === 'add_product') {
+      const sheetProd = ss.getSheetByName('Товары');
+      const sheetDeliv = ss.getSheetByName('Доставка');
+      
+      if (!sheetProd || !sheetDeliv) {
+        return response({ status: 'error', error: 'Не найден лист "Товары" или "Доставка"' });
+      }
+      
+      const lastRow = Math.max(sheetProd.getLastRow() + 1, 3);
+      const nextId = lastRow - 2;
+
+      sheetProd.appendRow([
+        nextId, data.name, data.batch, data.sourceDest, data.cnyPrice, data.rate,
+        '', data.weight, '', '', '', 'В пути', ''
+      ]);
+
+      sheetProd.getRange(lastRow, 7).setFormulaR1C1('=RC[-2]*RC[-1]');
+      sheetProd.getRange(lastRow, 9).setFormulaR1C1('=IFERROR(VLOOKUP(RC[-8], Доставка!C1:C8, 8, FALSE), 0)');
+      sheetProd.getRange(lastRow, 10).setFormulaR1C1('=RC[-3]+RC[-1]');
+      sheetProd.getRange(lastRow, 13).setFormulaR1C1('=IF(RC[-1]="Продано", RC[-2]-RC[-3], "")');
+
+      sheetDeliv.appendRow(['', '', '', '', '', '', '', '']);
+      sheetDeliv.getRange(lastRow, 1).setFormulaR1C1('=Товары!RC');
+      sheetDeliv.getRange(lastRow, 2).setFormulaR1C1('=Товары!RC');
+      sheetDeliv.getRange(lastRow, 3).setFormulaR1C1('=Товары!RC');
+      sheetDeliv.getRange(lastRow, 4).setFormulaR1C1('=Товары!RC[4]');
+      sheetDeliv.getRange(lastRow, 5).setFormulaR1C1('=IFERROR(RC[-1]/SUMIFS(C4, C3, RC[-2])*VLOOKUP(RC[-2], Накладные!C1:C3, 2, FALSE), 0)');
+      sheetDeliv.getRange(lastRow, 6).setFormulaR1C1('=IFERROR(RC[-2]/SUMIFS(C4, C3, RC[-3])*VLOOKUP(RC[-3], Накладные!C1:C3, 3, FALSE), 0)');
+      sheetDeliv.getRange(lastRow, 7).setFormulaR1C1('=IFERROR(RC[-3]/SUMIFS(C4, C3, RC[-4])*VLOOKUP(RC[-4], Накладные!C1:C5, 5, FALSE), 0)');
+      sheetDeliv.getRange(lastRow, 8).setFormulaR1C1('=RC[-2]+RC[-1]');
+
+      return response({ status: 'ok', id: nextId, row: lastRow });
+    }
+    
+    if (data.action === 'add_cargo') {
+      const sheet = ss.getSheetByName('Накладные');
+      if (!sheet) return response({ status: 'error', error: 'Лист "Накладные" не найден' });
+      
+      const lastRow = sheet.getLastRow();
+      let rowFound = -1;
+      if (lastRow > 1) {
+        const values = sheet.getRange(1, 1, lastRow, 1).getValues();
+        for (let i = 1; i < values.length; i++) {
+          if (String(values[i][0]).trim() === String(data.batch).trim()) {
+            rowFound = i + 1;
+            break;
+          }
+        }
+      }
+      if (rowFound !== -1) {
+        sheet.getRange(rowFound, 2).setValue(data.weight);
+        sheet.getRange(rowFound, 3).setValue(data.price);
+      } else {
+        sheet.appendRow([data.batch, data.weight, data.price, '', '']);
+      }
+      return response({ status: 'ok' });
+    }
+    
+    if (data.action === 'add_cdek') {
+      const sheet = ss.getSheetByName('Накладные');
+      if (!sheet) return response({ status: 'error', error: 'Лист "Накладные" не найден' });
+
+      const lastRow = sheet.getLastRow();
+      let rowFound = -1;
+      if (lastRow > 1) {
+        const values = sheet.getRange(1, 1, lastRow, 1).getValues();
+        for (let i = 1; i < values.length; i++) {
+          if (String(values[i][0]).trim() === String(data.batch).trim()) {
+            rowFound = i + 1;
+            break;
+          }
+        }
+      }
+      if (rowFound !== -1) {
+        sheet.getRange(rowFound, 4).setValue(data.weight);
+        sheet.getRange(rowFound, 5).setValue(data.price);
+      } else {
+        sheet.appendRow([data.batch, '', '', data.weight, data.price]);
+      }
+      return response({ status: 'ok' });
+    }
+
+    if (data.action === 'search_products') {
+      const sheet = ss.getSheetByName('Товары');
+      if (!sheet) return response({ status: 'error', error: 'Лист "Товары" не найден' });
+
+      const values = sheet.getDataRange().getValues();
+      const results = [];
+      for (let i = 2; i < values.length; i++) {
+        const status = String(values[i][11]);
+        const dest = String(values[i][3]).toLowerCase();
+        if (status !== 'Продано' && !dest.includes('/себе') && !dest.endsWith('себе')) {
+          results.push({ id: values[i][0], name: values[i][1], batch: values[i][2] });
+        }
+      }
+      return response({ status: 'ok', items: results.slice(-15) });
+    }
+
+    if (data.action === 'sell_product') {
+      const sheet = ss.getSheetByName('Товары');
+      if (!sheet) return response({ status: 'error', error: 'Лист "Товары" не найден' });
+
+      const values = sheet.getDataRange().getValues();
+      for (let i = 2; i < values.length; i++) {
+        if (String(values[i][0]) === String(data.id)) {
+          sheet.getRange(i + 1, 11).setValue(data.sellPrice);
+          sheet.getRange(i + 1, 12).setValue('Продано');
+          return response({ status: 'ok', name: values[i][1] });
+        }
+      }
+      return response({ status: 'error', error: 'Товар не найден' });
+    }
+
+    return response({ status: 'error', error: 'Неизвестное действие' });
   } catch (err) {
-    console.error('Ошибка связи с Google Sheets:', err);
-    return { status: 'error', error: err.message };
+    return response({ status: 'error', error: err.toString() });
+  } finally {
+    lock.releaseLock();
   }
 }
 
-// Проверка доступа: бот отвечает ТОЛЬКО тебе
-bot.use(async (ctx, next) => {
-  if (ctx.from && ctx.from.id !== ADMIN_ID) {
-    return ctx.reply('⛔ Доступ запрещен. Бот только для личного пользования.');
-  }
-  return next();
-});
-
-// Старт
-bot.start(async (ctx) => {
-  userSessions.delete(ctx.from.id);
-  await ctx.reply(
-    '📊 *Бот учета Поизон010*\n\n' +
-    'Нажмите кнопку *«➕ Добавить товар»*, чтобы внести новую позицию по шагам.',
-    { parse_mode: 'Markdown', ...adminMenu }
-  );
-});
-
-// Сброс
-bot.hears('❌ Отмена', async (ctx) => {
-  userSessions.delete(ctx.from.id);
-  await ctx.reply('Действие отменено.', adminMenu);
-});
-
-// --- СЦЕНАРИЙ А: ПОШАГОВЫЙ ВВОД ТОВАРА ---
-
-bot.hears('➕ Добавить товар', async (ctx) => {
-  userSessions.set(ctx.from.id, { step: 'NAME' });
-  await ctx.reply(
-    '📝 *Шаг 1 из 6:*\nВведите наименование товара:\n_Пример: Штаны Nike или Nike Blazer 77_',
-    { parse_mode: 'Markdown', ...Markup.keyboard([['❌ Отмена']]).resize() }
-  );
-});
-
-// Слушатель всех шагов
-bot.on('text', async (ctx, next) => {
-  const userId = ctx.from.id;
-  const state = userSessions.get(userId);
-  if (!state) return next();
-
-  const text = ctx.message.text.trim();
-  if (text === '❌ Отмена') {
-    userSessions.delete(userId);
-    return ctx.reply('Действие отменено.', adminMenu);
-  }
-
-  // Шаг 1: Название
-  if (state.step === 'NAME') {
-    state.name = text;
-    state.step = 'BATCH';
-    userSessions.set(userId, state);
-    return ctx.reply(
-      `Товар: *${state.name}*\n\n` +
-      `📦 *Шаг 2 из 6:*\nВведите номер объединения/партии:\n_Пример: 910 или 925_`,
-      { parse_mode: 'Markdown' }
-    );
-  }
-
-  // Шаг 2: Номер партии
-  if (state.step === 'BATCH') {
-    state.batch = text;
-    state.step = 'CNY_PRICE';
-    userSessions.set(userId, state);
-    return ctx.reply(
-      `Партия: *${state.batch}*\n\n` +
-      `💴 *Шаг 3 из 6:*\nВведите цену в юанях (¥):\n_Пример: 44 или 284_`,
-      { parse_mode: 'Markdown' }
-    );
-  }
-
-  // Шаг 3: Цена ¥
-  if (state.step === 'CNY_PRICE') {
-    const cny = parseFloat(text.replace(',', '.'));
-    if (isNaN(cny) || cny <= 0) {
-      return ctx.reply('Введите число для цены в юанях:');
-    }
-    state.cnyPrice = cny;
-    state.step = 'RATE';
-    userSessions.set(userId, state);
-    return ctx.reply(
-      `Цена: *${state.cnyPrice} ¥*\n\n` +
-      `📈 *Шаг 4 из 6:*\nПо какому курсу куплен юань?\n_Пример: 13.63 или 11.75_`,
-      { parse_mode: 'Markdown' }
-    );
-  }
-
-  // Шаг 4: Курс
-  if (state.step === 'RATE') {
-    const rate = parseFloat(text.replace(',', '.'));
-    if (isNaN(rate) || rate <= 0) {
-      return ctx.reply('Введите число для курса:');
-    }
-    state.rate = rate;
-    state.step = 'WEIGHT';
-    userSessions.set(userId, state);
-    return ctx.reply(
-      `Курс: *${state.rate} ₽*\n` +
-      `Сумма: *${(state.cnyPrice * state.rate).toFixed(2)} ₽*\n\n` +
-      `⚖️ *Шаг 5 из 6:*\nЧистый вес на складе в граммах (по фото):\n_Пример: 265 или 1075_`,
-      { parse_mode: 'Markdown' }
-    );
-  }
-
-  // Шаг 5: Вес
-  if (state.step === 'WEIGHT') {
-    const weight = parseFloat(text.replace(/[^\d.]/g, ''));
-    if (isNaN(weight) || weight <= 0) {
-      return ctx.reply('Введите вес числом в граммах (например, 265):');
-    }
-    state.warehouseWeight = weight;
-    state.step = 'SOURCE_DEST';
-    userSessions.set(userId, state);
-    return ctx.reply(
-      `Складской вес: *${state.warehouseWeight} г*\n\n` +
-      `🏷 *Шаг 6 из 6:*\nГде куплено и куда пойдет?\n` +
-      `_Примеры:_ \`Пойзон/себе\`, \`Рыба/себе+авито\`, \`Тао/себе\`\n\n` +
-      `_(Пойзон покрасит ячейку в синий, Рыба — в жёлтый, Тао — в кирпичный)_`,
-      { parse_mode: 'Markdown' }
-    );
-  }
-
-  // Шаг 6: Источник и отправка в таблицу
-  if (state.step === 'SOURCE_DEST') {
-    const parts = text.split('/');
-    state.source = parts[0] ? parts[0].trim() : text;
-    state.destination = parts[1] ? parts[1].trim() : 'себе';
-
-    await ctx.reply('⏳ Записываю данные в таблицу *Поизон010*...', { parse_mode: 'Markdown' });
-
-    const payload = {
-      action: 'add_product',
-      name: state.name,
-      batch: state.batch,
-      cnyPrice: state.cnyPrice,
-      rate: state.rate,
-      warehouseWeight: state.warehouseWeight,
-      source: state.source,
-      destination: state.destination
-    };
-
-    const res = await sendToGoogleSheets(payload);
-
-    if (res && res.status === 'ok') {
-      await ctx.reply(
-        `✅ *Товар записан в таблицу!*\n\n` +
-        `• Строка товаров: *№${res.row}*\n` +
-        `• Строка доставки: *№${res.deliveryRow}*\n` +
-        `• Товар: *${state.name}*\n` +
-        `• Партия: *${state.batch}*\n` +
-        `• Цена: *${state.cnyPrice} ¥* (по курсу ${state.rate} = ${(state.cnyPrice * state.rate).toFixed(2)} ₽)\n` +
-        `• Складской вес: *${state.warehouseWeight} г*\n` +
-        `• Маркировка: *${state.source}/${state.destination}*`,
-        { parse_mode: 'Markdown', ...adminMenu }
-      );
-    } else {
-      await ctx.reply(
-        `⚠️ Ошибка записи в таблицу: ${res.message || res.error || 'Проверь Webhook URL'}\nПопробуйте снова.`,
-        adminMenu
-      );
-    }
-
-    userSessions.delete(userId);
-    return;
-  }
-
-  return next();
-});
-
-bot.launch().then(() => console.log('>>> БОТ УЧЕТА ПОИЗОН010 ЗАПУЩЕН <<<'));
-
-// Поддержание жизнедеятельности
-const port = process.env.PORT || 3001;
-http.createServer((req, res) => res.end('Table Bot Active')).listen(port, () => {
-  console.log(`Table Bot слушает порт ${port}`);
-});
-
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+function response(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
