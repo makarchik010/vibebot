@@ -1,452 +1,266 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Светлана Соковикова — Психолог и коуч</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --bg: #FBFBFA;
-      --card-bg: #FFFFFF;
-      --text-main: #191919;
-      --text-muted: #6B6B6B;
-      --border: #E8E8E6;
-      --accent: #2A2A2A;
-      --accent-hover: #000000;
-      --max-width: 960px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text-main);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      padding: 0 20px;
-    }
-
-    .container {
-      max-width: var(--max-width);
-      margin: 0 auto;
-    }
-
-    /* Навигация */
-    header {
-      padding: 32px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .brand {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      background-color: #27C93F;
-      border-radius: 50%;
-    }
-
-    /* Первый экран */
-    .hero {
-      padding: 80px 0 60px;
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 48px;
-      align-items: center;
-    }
-
-    .hero-text h1 {
-      font-size: clamp(32px, 4.5vw, 44px);
-      font-weight: 500;
-      line-height: 1.2;
-      letter-spacing: -0.03em;
-      margin-bottom: 24px;
-    }
-
-    .hero-text p {
-      font-size: 17px;
-      color: var(--text-muted);
-      margin-bottom: 36px;
-      font-weight: 300;
-      max-width: 480px;
-    }
-
-    .actions {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .btn {
-      display: inline-block;
-      background-color: var(--accent);
-      color: #FFFFFF;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: background-color 0.15s ease;
-    }
-
-    .btn:hover {
-      background-color: var(--accent-hover);
-    }
-
-    .btn-secondary {
-      color: var(--text-main);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      padding: 12px 16px;
-    }
-
-    .hero-img-wrap {
-      width: 100%;
-      aspect-ratio: 4/5;
-      background-color: var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    .hero-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    /* Блоки */
-    section {
-      padding: 64px 0;
-      border-top: 1px solid var(--border);
-    }
-
-    .section-title {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      margin-bottom: 32px;
-      font-weight: 500;
-    }
-
-    /* Сетка тем / запросов */
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 24px;
-    }
-
-    .card h3 {
-      font-size: 16px;
-      font-weight: 500;
-      margin-bottom: 8px;
-    }
-
-    .card p {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* Форматы и цены */
-    .price-card {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .price-value {
-      font-size: 22px;
-      font-weight: 500;
-      margin: 16px 0 8px;
-      letter-spacing: -0.02em;
-    }
-
-    .price-desc {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 24px;
-    }
-
-    /* Отзывы */
-    .review-card {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .review-tag {
-      display: inline-block;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-      font-weight: 600;
-    }
-
-    .review-text {
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--text-main);
-      margin-bottom: 20px;
-    }
-
-    .review-author {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-    }
-
-    /* Опыт / Образование */
-    .timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .timeline-item {
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      font-size: 14px;
-    }
-
-    .timeline-year {
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-
-    .timeline-content strong {
-      font-weight: 500;
-    }
-
-    .timeline-content p {
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    /* Футер */
-    footer {
-      padding: 48px 0 64px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    @media (max-width: 768px) {
-      .hero {
-        grid-template-columns: 1fr;
-        padding: 48px 0;
-        gap: 32px;
-      }
-      .hero-img-wrap {
-        aspect-ratio: 1/1;
-      }
-      .timeline-item {
-        grid-template-columns: 1fr;
-        gap: 4px;
-      }
-      footer {
-        flex-direction: column;
-        gap: 16px;
-        align-items: flex-start;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Светлана Соковикова | Психолог · Медиатор · Бизнес-тренер</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Подключаем шрифты (например, спокойный Montserrat и PT Serif для заголовков) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <div class="brand">Светлана Соковикова</div>
-      <div class="status-badge">
-        <span class="status-dot"></span> Ведется запись на консультации
-      </div>
+    <!-- Шапка -->
+    <header class="header" id="header">
+        <div class="container header-container">
+            <div class="logo">Светлана Соковикова</div>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="#about">Обо мне</a></li>
+                    <li><a href="#psychology">Психология</a></li>
+                    <li><a href="#mediation">Медиация</a></li>
+                    <li><a href="#business">Бизнесу</a></li>
+                    <li><a href="#pricing">Услуги и цены</a></li>
+                    <li><a href="#articles">Статьи</a></li>
+                </ul>
+            </nav>
+            <a href="#contacts" class="btn btn-outline">Связаться со мной</a>
+            <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        </div>
     </header>
 
     <!-- Главный экран -->
-    <main class="hero">
-      <div class="hero-text">
-        <h1>Психологическое консультирование и индивидуальный коучинг</h1>
-        <p>Помогаю преодолеть кризисы, выйти из состояния выгорания и выстроить понятную стратегию личного и профессионального развития.</p>
-        <div class="actions">
-          <!-- Замени на реальный юзернейм мамы в Telegram -->
-          <a href="https://t.me/твой_ник" target="_blank" class="btn">Написать в Telegram</a>
-          <a href="#formats" class="btn-secondary">Услуги и форматы ↓</a>
+    <section class="hero">
+        <div class="container hero-container">
+            <div class="hero-text">
+                <h1>Психолог · Медиатор · Бизнес-тренер</h1>
+                <p>Помогаю разбираться в сложных эмоциях, выстраивать личные границы и находить новые способы решения конфликтов. Тепло, бережно и профессионально.</p>
+                <div class="hero-buttons">
+                    <a href="#contacts" class="btn btn-primary">Записаться на консультацию</a>
+                    <p class="hero-note">Первая ознакомительная онлайн-консультация — 2 000 ₽</p>
+                </div>
+            </div>
+            <div class="hero-image">
+                <!-- ЗАМЕНИТЬ НА РЕАЛЬНОЕ ФОТО -->
+                <img src="placeholder.jpg" alt="Светлана Соковикова">
+            </div>
         </div>
-      </div>
-      <div class="hero-img-wrap">
-        <!-- Сюда подставишь файл с фото (например, img/photo.jpg) -->
-        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80" alt="Светлана Соковикова">
-      </div>
-    </main>
-
-    <!-- С какими запросами работает -->
-    <section>
-      <div class="section-title">С чем я помогаю</div>
-      <div class="grid-3">
-        <div class="card">
-          <h3>Кризисы и выгорание</h3>
-          <p>Работа с хронической усталостью, апатией, потерей мотивации и поиском внутренних опор.</p>
-        </div>
-        <div class="card">
-          <h3>Принятие решений</h3>
-          <p>Выход из ступора при смене карьеры, масштабировании дела или сложных жизненных выборах.</p>
-        </div>
-        <div class="card">
-          <h3>Отношения и границы</h3>
-          <p>Выстраивание здоровой коммуникации с партнерами, коллегами и близкими без чувства вины.</p>
-        </div>
-      </div>
     </section>
 
-    <!-- Форматы работы -->
-    <section id="formats">
-      <div class="section-title">Форматы и стоимость</div>
-      <div class="grid-3">
-        
-        <div class="card price-card">
-          <div>
-            <h3>Ознакомительный созвон</h3>
-            <p>15-минутная встреча онлайн для знакомства, определения запроса и понимания формата работы.</p>
-            <div class="price-value">0 ₽</div>
-            <div class="price-desc">15 минут / Zoom</div>
-          </div>
-          <a href="https://t.me/твой_ник" target="_blank" class="btn" style="background:#EDEDEB; color:#191919; text-align:center;">Записаться</a>
+    <!-- Блок: Психологическое консультирование -->
+    <section id="psychology" class="section bg-light">
+        <div class="container">
+            <div class="section-header center">
+                <h2>Психологическое консультирование</h2>
+                <p>Я работаю с девушками и женщинами старше 18 лет.</p>
+            </div>
+            
+            <div class="grid-3">
+                <div class="card">
+                    <h3>Сложные эмоции</h3>
+                    <p>Тревога, обида, раздражение, чувство вины. Помощь, если эмоции мешают отношениям и повседневной жизни.</p>
+                </div>
+                <div class="card">
+                    <h3>Самооценка</h3>
+                    <p>Неуверенность, сомнения в собственных решениях, трудности с выражением своих желаний и отстаиванием своей позиции.</p>
+                </div>
+                <div class="card">
+                    <h3>Личные границы</h3>
+                    <p>Сложности с отказом, страх обидеть другого человека, чувство вины за собственные потребности.</p>
+                </div>
+                <div class="card">
+                    <h3>Отношения и конфликты</h3>
+                    <p>Повторяющиеся ссоры с близкими, напряжённое общение, взаимные обиды, трудности с поиском решений.</p>
+                </div>
+                <div class="card">
+                    <h3>Повторяющиеся сценарии</h3>
+                    <p>Ситуации, в которых вы снова сталкиваетесь с похожими проблемами в отношениях или реагируете привычным образом.</p>
+                </div>
+                <div class="card">
+                    <h3>Сложные ситуации</h3>
+                    <p>Периоды неопределённости, непростые решения, перемены, когда трудно понять, как действовать дальше.</p>
+                </div>
+            </div>
+            <p class="restriction-note center">* Обратите внимание: я не работаю с мужчинами, детьми, фобиями и подтверждёнными психиатрическими диагнозами.</p>
         </div>
-
-        <div class="card price-card">
-          <div>
-            <h3>Индивидуальная консультация</h3>
-            <p>Глубокий разбор конкретной ситуации, поиск причин затыка и формирование плана действий.</p>
-            <div class="price-value">3 500 ₽</div>
-            <div class="price-desc">60 минут / Онлайн или очно</div>
-          </div>
-          <a href="https://t.me/твой_ник" target="_blank" class="btn" style="text-align:center;">Выбрать сессию</a>
-        </div>
-
-        <div class="card price-card">
-          <div>
-            <h3>Сопровождение (4 сессии)</h3>
-            <p>Системная работа над долгосрочной целью с поддержкой между встречами в мессенджере.</p>
-            <div class="price-value">13 000 ₽</div>
-            <div class="price-desc">4 встречи по 60 мин + трекинг</div>
-          </div>
-          <a href="https://t.me/твой_ник" target="_blank" class="btn" style="text-align:center;">Обсудить пакет</a>
-        </div>
-
-      </div>
     </section>
 
-    <!-- Отзывы и результаты -->
-    <section id="reviews">
-      <div class="section-title">Отзывы и результаты</div>
-      <div class="grid-3">
-        <div class="card review-card">
-          <div>
-            <span class="review-tag">Тревожность и самооценка</span>
-            <p class="review-text">
-              «Пришла в состоянии постоянного напряжения и страха не оправдать ожидания. За несколько месяцев работы удалось нащупать внутренние опоры и научиться спокойно говорить “нет” без чувства вины.»
-            </p>
-          </div>
-          <div class="review-author">Елена, 34 года</div>
+    <!-- Блок: Медиация -->
+    <section id="mediation" class="section">
+        <div class="container">
+            <div class="mediation-container">
+                <div class="mediation-text">
+                    <h2>Медиация: когда договориться сложно</h2>
+                    <p>Когда конфликт затягивается, участникам бывает трудно услышать друг друга, отделить эмоции от сути разногласий и найти решение, которое учитывает интересы обеих сторон.</p>
+                    <p><strong>Медиация</strong> — это структурированный процесс урегулирования конфликта с участием нейтрального посредника.</p>
+                    <p>Моя задача как медиатора — организовать диалог, помочь сторонам прояснить позиции и интересы, обсудить возможные варианты решения и прийти к взаимоприемлемым договорённостям.</p>
+                    <p><em>Я работаю с семейными, межличностными, рабочими и организационными конфликтами.</em></p>
+                </div>
+                <div class="mediation-action">
+                    <h3>Подходит ли вам медиация?</h3>
+                    <p>Обсудить обстоятельства конфликта и возможный формат работы можно на предварительной встрече.</p>
+                    <a href="#contacts" class="btn btn-secondary">Обсудить ситуацию</a>
+                </div>
+            </div>
         </div>
-
-        <div class="card review-card">
-          <div>
-            <span class="review-tag">Профессиональное выгорание</span>
-            <p class="review-text">
-              «Шел на консультации с ощущением тупика и полным отсутствием сил. Светлана помогла разложить хаос на конкретные шаги, восстановить баланс между работой и отдыхом и вернуть интерес к жизни.»
-            </p>
-          </div>
-          <div class="review-author">Михаил, предприниматель</div>
-        </div>
-
-        <div class="card review-card">
-          <div>
-            <span class="review-tag">Личные границы и отношения</span>
-            <p class="review-text">
-              «Очень бережный, тактичный подход и глубокая работа без шаблонных советов. Впервые почувствовала, что меня действительно слышат и помогают найти мои собственные ответы.»
-            </p>
-          </div>
-          <div class="review-author">Анна, 29 лет</div>
-        </div>
-      </div>
     </section>
 
-    <!-- Образование и подход -->
-    <section>
-      <div class="section-title">Опыт и образование</div>
-      <div class="timeline">
-        <div class="timeline-item">
-          <div class="timeline-year">Базовое образование</div>
-          <div class="timeline-content">
-            <strong>Удмуртский государственный университет</strong>
-            <p>Профильное высшее образование, психологический факультет.</p>
-          </div>
+    <!-- Блок: Бизнесу -->
+    <section id="business" class="section bg-dark text-white">
+        <div class="container">
+            <div class="section-header">
+                <h2>Психология и тренинги для бизнеса</h2>
+                <p>Помогаю организациям работать с психологическими аспектами взаимодействия сотрудников.</p>
+            </div>
+            
+            <div class="grid-2">
+                <div class="business-list">
+                    <h3>Возможные направления работы:</h3>
+                    <ul>
+                        <li><strong>Коммуникация и конфликты</strong> — понимание причин разногласий, конструктивный диалог.</li>
+                        <li><strong>Эмоциональный интеллект</strong> — распознавание эмоций и эффективное взаимодействие.</li>
+                        <li><strong>Стресс и эмоциональная нагрузка</strong> — освоение способов саморегуляции.</li>
+                        <li><strong>Личные границы в среде</strong> — баланс интересов и корректное обсуждение разногласий.</li>
+                        <li><strong>Индивидуальная поддержка</strong> — психологическая помощь сотрудникам.</li>
+                    </ul>
+                </div>
+                <div class="business-process">
+                    <h3>Как строится работа:</h3>
+                    <p>Сначала мы обсуждаем запрос организации, целевую аудиторию и ожидаемые результаты. Затем определяем подходящий формат, содержание программы и условия проведения.</p>
+                    <p><em>Программы адаптируются под задачи конкретной команды.</em></p>
+                    <a href="#contacts" class="btn btn-light mt-2">Обсудить корпоративный формат</a>
+                </div>
+            </div>
+            
+            <!-- Место под бизнес-кейсы -->
+            <div class="cases-section mt-4">
+                <h3>Реализованные кейсы (Бизнес-тренер)</h3>
+                <div class="grid-2">
+                    <div class="case-card">
+                        <h4>Название компании / Запрос</h4>
+                        <p>Краткое описание проблемы и что было сделано.</p>
+                        <p><strong>Результат:</strong> Описание результата.</p>
+                    </div>
+                    <div class="case-card">
+                        <h4>Название компании / Запрос</h4>
+                        <p>Краткое описание проблемы и что было сделано.</p>
+                        <p><strong>Результат:</strong> Описание результата.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-year">Квалификация</div>
-          <div class="timeline-content">
-            <strong>Сертифицированный коучинг и тренинговая работа</strong>
-            <p>Инструменты когнитивно-поведенческого подхода и практической психологии.</p>
-          </div>
+    </section>
+
+    <!-- Блок: Обо мне и Как я работаю -->
+    <section id="about" class="section">
+        <div class="container">
+            <div class="grid-2 align-center">
+                <div class="about-image">
+                    <!-- ЗАМЕНИТЬ НА РЕАЛЬНОЕ ФОТО -->
+                    <img src="placeholder.jpg" alt="Светлана Соковикова в работе">
+                </div>
+                <div class="about-text">
+                    <h2>Обо мне и моем подходе</h2>
+                    <p>Мой основной метод — <strong>когнитивно-поведенческая терапия (КПТ)</strong>. Другие техники я использую тогда, когда они уместны и помогают решать задачи нашей работы.</p>
+                    <p>Вам не обязательно заранее знать, как сформулировать запрос. Можно прийти с тем, что сейчас беспокоит, и постепенно разобраться в этом.</p>
+                    
+                    <h3>Образование и квалификация:</h3>
+                    <ul class="education-list">
+                        <li>Удмуртский государственный университет (Институт педагогики, психологии и социальных технологий) — диплом магистра с отличием.</li>
+                        <li>Специалист в области медиации (медиатор).</li>
+                        <li>Когнитивно-поведенческая терапия: философия и особенности КПТ.</li>
+                        <li>Гуманистическое направление в психотерапии.</li>
+                        <li>Гештальт-терапия: теория и практика.</li>
+                        <li>Семейная системная психотерапия.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-year">Принцип работы</div>
-          <div class="timeline-content">
-            <strong>Конфиденциальность и бережность</strong>
-            <p>Безопасное пространство без критики, готовых рецептов и навязывания чужого опыта.</p>
-          </div>
+    </section>
+
+    <!-- Блок: Цены -->
+    <section id="pricing" class="section bg-light">
+        <div class="container">
+            <div class="section-header center">
+                <h2>Услуги и цены</h2>
+                <p>Индивидуальное консультирование</p>
+            </div>
+            
+            <div class="pricing-grid">
+                <!-- Онлайн -->
+                <div class="price-card">
+                    <div class="price-header">
+                        <h3>Онлайн формат</h3>
+                    </div>
+                    <div class="price-body">
+                        <div class="price-item">
+                            <span>Первая (ознакомительная)</span>
+                            <span class="price">2 000 ₽</span>
+                        </div>
+                        <div class="price-item">
+                            <span>Последующие сессии</span>
+                            <span class="price">2 500 ₽</span>
+                        </div>
+                        <div class="price-item highlight">
+                            <span>Курс из 5 консультаций</span>
+                            <span class="price">10 000 ₽</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Офлайн -->
+                <div class="price-card">
+                    <div class="price-header">
+                        <h3>Офлайн формат</h3>
+                    </div>
+                    <div class="price-body">
+                        <div class="price-item">
+                            <span>Первая (ознакомительная)</span>
+                            <span class="price">2 500 ₽</span>
+                        </div>
+                        <div class="price-item">
+                            <span>Последующие сессии</span>
+                            <span class="price">3 000 ₽</span>
+                        </div>
+                        <div class="price-item highlight">
+                            <span>Курс из 5 консультаций</span>
+                            <span class="price">12 500 ₽</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="center mt-2">
+                <a href="#contacts" class="btn btn-primary">Записаться на встречу</a>
+            </div>
         </div>
-      </div>
+    </section>
+
+    <!-- Блок: Контакты -->
+    <section id="contacts" class="section">
+        <div class="container">
+            <div class="contact-block center">
+                <h2>Свяжитесь со мной</h2>
+                <p>Выберите удобный для вас мессенджер, чтобы задать вопросы или записаться на консультацию.</p>
+                <div class="messengers">
+                    <!-- Замените решетки # на реальные ссылки -->
+                    <a href="#" class="messenger-btn tg">Telegram</a>
+                    <a href="#" class="messenger-btn wa">WhatsApp</a>
+                    <a href="#" class="messenger-btn vk">ВКонтакте</a>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- Подвал -->
-    <footer>
-      <div>© 2026 Светлана Соковикова</div>
-      <div>Ижевск / Онлайн по всему миру</div>
+    <footer class="footer">
+        <div class="container footer-container">
+            <p>&copy; 2026 Светлана Соковикова. Психолог, Медиатор, Бизнес-тренер.</p>
+            <p>Сайт разработан <a href="#">Макаром Соковиковым</a></p>
+        </div>
     </footer>
-  </div>
 
+    <script src="script.js"></script>
 </body>
 </html>
