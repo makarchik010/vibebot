@@ -1,398 +1,78 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Светлана Соковикова | Психолог · Медиатор · Бизнес-тренер</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Montserrat:wght@300;400;500;600&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body>
+document.addEventListener('DOMContentLoaded', () => {
+    // 0. Автоматическая очистка любых паразитных надписей сносок
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while (node = walker.nextNode()) {
+        if (node.nodeValue.includes('[cite:')) {
+            node.nodeValue = node.nodeValue.replace(/\/gi, '');
+        }
+    }
 
-    <!-- Шапка -->
-    <header class="header" id="header">
-        <div class="container header-container">
-            <div class="logo">Светлана Соковикова</div>
-            <nav class="nav">
-                <ul class="nav-list">
-                    <li><a href="#about">Обо мне</a></li>
-                    <li><a href="#psychology">Консультирование</a></li>
-                    <li><a href="#mediation">Медиация</a></li>
-                    <li><a href="#business">Бизнес-тренинги</a></li>
-                    <li><a href="#pricing">Цены</a></li>
-                    <li><a href="#articles">Статьи</a></li>
-                </ul>
-            </nav>
-            <button type="button" class="btn btn-outline header-btn open-modal-btn">Связаться со мной</button>
-            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Меню">☰</button>
-        </div>
-    </header>
+    // 1. Плавный переход по ссылкам навигации
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
 
-    <!-- Главный экран -->
-    <section class="hero">
-        <div class="container hero-container">
-            <div class="hero-text">
-                <h1 class="hero-title">
-                    <span>Психолог</span>
-                    <span>Медиатор</span>
-                    <span>Бизнес-тренер</span>
-                </h1>
-                <p class="hero-desc">Помогаю разбираться в сложных эмоциях, выстраивать личные границы и находить новые способы решения конфликтов</p>
-                
-                <div class="hero-credo">
-                    <span>Тепло</span>
-                    <span>Бережно</span>
-                    <span>Профессионально</span>
-                </div>
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                e.preventDefault();
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
 
-                <div class="hero-buttons">
-                    <button type="button" class="btn btn-primary open-modal-btn">Записаться на консультацию</button>
-                </div>
-            </div>
-            <div class="hero-image">
-                <img src="hero.jpg" alt="Светлана Соковикова">
-            </div>
-        </div>
-    </section>
+    // 2. Всплывающее окно контактов
+    const modal = document.getElementById('contact-modal');
+    const closeBtn = document.getElementById('modal-close');
+    const openButtons = document.querySelectorAll('.open-modal-btn');
 
-    <!-- Блок: Обо мне -->
-    <section id="about" class="section">
-        <div class="container">
-            <div class="grid-2 align-center">
-                <div class="about-gallery">
-                    <img src="about (7).jpg" alt="Светлана Соковикова фото 1" class="gallery-item">
-                    <img src="about (6).jpg" alt="Светлана Соковикова фото 2" class="gallery-item">
-                    <img src="about (8).jpg" alt="Светлана Соковикова фото 3" class="gallery-item">
-                </div>
-                <div class="about-text">
-                    <h2>Обо мне и моем подходе</h2>
-                    <p>Мой основной метод — <strong>когнитивно-поведенческая терапия (КПТ)</strong>. Другие техники я использую тогда, когда они уместны и помогают решать задачи нашей работы.</p>
-                    <p>Вам не обязательно заранее знать, как сформулировать запрос. Можно прийти с тем, что сейчас беспокоит, и постепенно разобраться в этом.</p>
-                    
-                    <h3>Образование и квалификация</h3>
-                    <ul class="education-list">
-                        <li>Удмуртский государственный университет (Институт педагогики, психологии и социальных технологий) — диплом магистра с отличием</li>
-                        <li>Специалист в области медиации (медиатор)</li>
-                        <li>Когнитивно-поведенческая терапия: философия и особенности КПТ</li>
-                        <li>Гуманистическое направление в психотерапии</li>
-                        <li>Гештальт-терапия: теория и практика</li>
-                        <li>Семейная системная психотерапия</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
+    openButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (modal) modal.classList.add('active');
+        });
+    });
 
-    <!-- Блок: Психологическое консультирование -->
-    <section id="psychology" class="section bg-light">
-        <div class="container">
-            <div class="section-header center">
-                <h2>Психологическое консультирование</h2>
-                <p>Я работаю с девушками и женщинами старше 18 лет</p>
-            </div>
-            
-            <div class="grid-3">
-                <div class="card">
-                    <h3>Сложные эмоции</h3>
-                    <p>Тревога, обида, раздражение, чувство вины. Помощь, если эмоции мешают отношениям и повседневной жизни.</p>
-                </div>
-                <div class="card">
-                    <h3>Самооценка</h3>
-                    <p>Неуверенность, сомнения в собственных решениях, трудности с выражением своих желаний и отстаиванием позиции.</p>
-                </div>
-                <div class="card">
-                    <h3>Личные границы</h3>
-                    <p>Сложности с отказом, страх обидеть другого человека, чувство вины за собственные потребности.</p>
-                </div>
-                <div class="card">
-                    <h3>Отношения и конфликты</h3>
-                    <p>Повторяющиеся ссоры с близкими, напряжённое общение, взаимные обиды, трудности с поиском решений.</p>
-                </div>
-                <div class="card">
-                    <h3>Повторяющиеся сценарии</h3>
-                    <p>Ситуации, в которых вы снова сталкиваетесь с похожими проблемами в отношениях или реагируете привычным образом.</p>
-                </div>
-                <div class="card">
-                    <h3>Сложные ситуации</h3>
-                    <p>Периоды неопределённости, непростые решения, перемены, когда трудно понять, как действовать дальше.</p>
-                </div>
-            </div>
-            <p class="restriction-note center">* Обратите внимание: я не работаю с мужчинами, детьми, фобиями и подтверждёнными психиатрическими диагнозами</p>
-        </div>
-    </section>
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+    }
 
-    <!-- Блок: Медиация -->
-    <section id="mediation" class="section">
-        <div class="container text-center-block">
-            <div class="section-header center">
-                <h2>Медиация: когда договориться сложно</h2>
-                <p class="max-w-text">Когда конфликт затягивается, участникам бывает трудно услышать друг друга, отделить эмоции от сути разногласий и найти решение, которое учитывает интересы обеих сторон.</p>
-            </div>
-            <div class="mediation-content-card">
-                <p><strong>Медиация</strong> — это структурированный процесс урегулирования конфликта с участием нейтрального посредника.</p>
-                <p>Моя задача как медиатора — организовать конструктивный диалог, помочь сторонам прояснить позиции и интересы, обсудить варианты и прийти к взаимоприемлемым договорённостям.</p>
-                <p class="mediation-tags">Семейные · Межличностные · Рабочие · Организационные конфликты</p>
-                <div class="mt-2">
-                    <button type="button" class="btn btn-secondary open-modal-btn">Обсудить ситуацию</button>
-                </div>
-            </div>
-        </div>
-    </section>
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    }
 
-    <!-- Блок: Психология и тренинги для бизнеса -->
-    <section id="business" class="section bg-light">
-        <div class="container text-center-block">
-            <div class="section-header center">
-                <h2>Психология и тренинги для бизнеса</h2>
-                <p class="max-w-text">Более 400 часов тренингов и программ для предприятий: Ижевский радиозавод, Концерн «Калашников», ПАО «Удмуртнефть», «Фабрика Мирлачева», Корпорация развития УР</p>
-            </div>
+    // 3. Мобильное бургер-меню
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const nav = document.querySelector('.nav');
 
-            <!-- Реализованные проекты -->
-            <div class="business-subblock">
-                <h3 class="subblock-title">Реализованные проекты</h3>
-                <p class="subblock-desc">Нажмите на тему проекта, чтобы изучить подробные результаты и регламенты</p>
-                <div class="grid-3 projects-preview-grid">
-                    <a href="projects.html#project-1" class="project-mini-card">
-                        <span class="project-tag">Продажи и сервис</span>
-                        <h4>Стандарты обслуживания и продажи мебели</h4>
-                        <p>«Фабрика Мирлачева»: рост конверсии в покупку на 30% и регламент коммуникаций</p>
-                        <span class="card-more-link">Смотреть проект →</span>
-                    </a>
-                    <a href="projects.html#project-2" class="project-mini-card">
-                        <span class="project-tag">Медиация в коллективе</span>
-                        <h4>Конфликт поколений и фасилитация</h4>
-                        <p>Муниципальное учреждение культуры: снижение напряжения и «Партитура взаимодействия»</p>
-                        <span class="card-more-link">Смотреть проект →</span>
-                    </a>
-                    <a href="projects.html#project-3" class="project-mini-card">
-                        <span class="project-tag">Сервисные продажи</span>
-                        <h4>Вовлечение персонала в допродажи</h4>
-                        <p>Сеть спа-центров «7 Sense»: преодоление барьера навязывания и рост повторных записей</p>
-                        <span class="card-more-link">Смотреть проект →</span>
-                    </a>
-                    <a href="projects.html#project-4" class="project-mini-card">
-                        <span class="project-tag">Ораторское мастерство</span>
-                        <h4>Убеждающие публичные выступления</h4>
-                        <p>АО «Ижевский радиозавод»: снятие страха сцены и структура докладов для специалистов</p>
-                        <span class="card-more-link">Смотреть проект →</span>
-                    </a>
-                    <a href="projects.html#project-5" class="project-mini-card">
-                        <span class="project-tag">Конфликт-менеджмент</span>
-                        <h4>Управление стрессом для руководителей</h4>
-                        <p>АО «Ижевский радиозавод»: трансактный анализ и саморегуляция в кризисных беседах</p>
-                        <span class="card-more-link">Смотреть проект →</span>
-                    </a>
-                    <div class="project-mini-card project-action-card">
-                        <h4>Нужна программа под вашу команду?</h4>
-                        <p>Разрабатываю прикладные тренинги под специфику и цели вашей компании</p>
-                        <button type="button" class="btn btn-primary open-modal-btn">Обсудить формат</button>
-                    </div>
-                </div>
-            </div>
+    if (mobileBtn && nav) {
+        mobileBtn.addEventListener('click', () => {
+            if (nav.style.display === 'block') {
+                nav.style.display = 'none';
+            } else {
+                nav.style.display = 'block';
+                nav.style.position = 'absolute';
+                nav.style.top = '100%';
+                nav.style.left = '0';
+                nav.style.width = '100%';
+                nav.style.backgroundColor = '#ffffff';
+                nav.style.padding = '20px';
+                nav.style.boxShadow = '0 8px 15px rgba(0,0,0,0.08)';
 
-            <!-- Участие в проектах: переход на подсайт events.html -->
-            <div class="business-subblock mt-4">
-                <h3 class="subblock-title">Участие в проектах организаций Удмуртии</h3>
-                <p class="subblock-desc">Форумы, обучающие семинары и программы развития управленческих кадров предприятий республики</p>
-                <div class="center mt-2">
-                    <a href="events.html" class="btn btn-outline" style="padding: 14px 30px; font-size: 1rem;">
-                        Смотреть все проекты и участие (14 мероприятий) →
-                    </a>
-                </div>
-            </div>
-
-            <!-- Публикации в прессе -->
-            <div class="business-subblock mt-4">
-                <h3 class="subblock-title">Публикации в официальных изданиях</h3>
-                <div class="grid-2 publications-grid">
-                    <a href="https://izvestiaur.ru/rubrics/-43-5926-18-iyunya/662644-privychki-upravlentsev/?sphrase_id=622953" target="_blank" rel="noopener" class="publication-card">
-                        <div class="pub-badge">Статья в прессе</div>
-                        <h4>«Привычки управленцев»</h4>
-                        <p class="pub-source">Газета «Известия Удмуртской Республики» №43 от 18 июня 2026 года</p>
-                        <span class="pub-link">Читать публикацию на сайте газеты ↗</span>
-                    </a>
-                    <a href="https://izvestiaur.ru/rubrics/-67-5944-10-sentyabrya/674985-passazhiry-na-vykhod/?sphrase_id=622954" target="_blank" rel="noopener" class="publication-card">
-                        <div class="pub-badge">Статья в прессе</div>
-                        <h4>«Пассажиры — на выход!»</h4>
-                        <p class="pub-source">Газета «Известия Удмуртской Республики» №67 от 10 сентября 2026 года</p>
-                        <span class="pub-link">Читать публикацию на сайте газеты ↗</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Блок: Услуги и цены -->
-    <section id="pricing" class="section">
-        <div class="container">
-            <div class="section-header center">
-                <h2>Услуги и цены</h2>
-                <p>Прозрачные условия индивидуальной и корпоративной работы</p>
-            </div>
-            
-            <div class="pricing-grid">
-                <!-- Онлайн -->
-                <div class="price-card">
-                    <div class="price-header">
-                        <h3>Онлайн формат</h3>
-                        <p>Индивидуальная консультация</p>
-                    </div>
-                    <div class="price-body">
-                        <div class="price-item">
-                            <span>Консультация (60 минут)</span>
-                            <span class="price">2 500 ₽</span>
-                        </div>
-                        <div class="price-item highlight">
-                            <span>Пакет из 5 консультаций</span>
-                            <span class="price">10 000 ₽</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Офлайн -->
-                <div class="price-card">
-                    <div class="price-header">
-                        <h3>Офлайн формат</h3>
-                        <p>Личная встреча в кабинете</p>
-                    </div>
-                    <div class="price-body">
-                        <div class="price-item">
-                            <span>Консультация (60 минут)</span>
-                            <span class="price">3 000 ₽</span>
-                        </div>
-                        <div class="price-item highlight">
-                            <span>Пакет из 5 консультаций</span>
-                            <span class="price">12 500 ₽</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Медиация -->
-                <div class="price-card">
-                    <div class="price-header">
-                        <h3>Услуги по медиации</h3>
-                        <p>Разрешение споров и разногласий</p>
-                    </div>
-                    <div class="price-body">
-                        <div class="price-item">
-                            <span>Сессия переговоров</span>
-                            <span class="price-note">По соглашению сторон</span>
-                        </div>
-                        <p class="card-desc-text">Семейные, межличностные, партнерские и трудовые конфликты</p>
-                    </div>
-                </div>
-
-                <!-- Бизнес -->
-                <div class="price-card">
-                    <div class="price-header">
-                        <h3>Корпоративные программы</h3>
-                        <p>Тренинги и поддержка персонала</p>
-                    </div>
-                    <div class="price-body">
-                        <div class="price-item">
-                            <span>Тренинги и фасилитация</span>
-                            <span class="price-note">По соглашению сторон</span>
-                        </div>
-                        <p class="card-desc-text">Программа адаптируется под цели, задачи и размер команды</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="center mt-4">
-                <button type="button" class="btn btn-primary open-modal-btn">Записаться на встречу</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Блок: Статьи и мысли -->
-    <section id="articles" class="section bg-light">
-        <div class="container">
-            <div class="section-header center">
-                <h2>Мысли и статьи</h2>
-                <p>Заметки о психологии отношений, личных границах и внутреннем спокойствии</p>
-            </div>
-
-            <div class="articles-grid" id="articles-container">
-                <div class="quote-card">
-                    <div class="quote-icon">“</div>
-                    <div class="quote-body">
-                        <p class="quote-text">Личные границы — это не каменная стена вокруг вас, а дверь с ручкой с вашей стороны. Вы сами решаете, кого, когда и на каких условиях впускать в свое пространство.</p>
-                        <div class="quote-author-row">
-                            <img src="about (7).jpg" alt="Светлана Соковикова" class="quote-avatar">
-                            <div>
-                                <span class="quote-name">Светлана Соковикова</span>
-                                <span class="quote-date">Октябрь 2026</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="quote-card">
-                    <div class="quote-icon">“</div>
-                    <div class="quote-body">
-                        <p class="quote-text">В конфликте мы чаще всего защищаем не факты, а свои невысказанные страхи и уязвимость. Когда стороны начинают говорить о потребностях, а не об обвинениях — находится решение.</p>
-                        <div class="quote-author-row">
-                            <img src="about (7).jpg" alt="Светлана Соковикова" class="quote-avatar">
-                            <div>
-                                <span class="quote-name">Светлана Соковикова</span>
-                                <span class="quote-date">Октябрь 2026</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Подвал -->
-    <footer class="footer">
-        <div class="container footer-container">
-            <p>&copy; 2026 Светлана Соковикова. Психолог, Медиатор, Бизнес-тренер</p>
-            <p>Сайт разработан <a href="#">Макаром Соковиковым</a></p>
-        </div>
-    </footer>
-
-    <!-- Всплывающее окно контактов -->
-    <div id="contact-modal" class="modal-overlay">
-        <div class="modal-window">
-            <button class="modal-close-btn" id="modal-close" aria-label="Закрыть">&times;</button>
-            <h3 class="modal-title">Свяжитесь со мной</h3>
-            <p class="modal-subtitle">Выберите удобный способ связи, чтобы задать вопрос или выбрать время консультации</p>
-            
-            <div class="modal-messengers-clean">
-                <a href="https://t.me/SokovikovaSvetlana" class="clean-btn btn-tg" target="_blank" rel="noopener">
-                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z"/>
-                    </svg>
-                    <span>Telegram</span>
-                </a>
-
-                <a href="https://max.ru/u/f9LHodD0cOLdkVy2zFyxgfVeQd7KhTa3dbVMVWaqyyc4YL8ckMcMt-DIKUo" class="clean-btn btn-max" target="_blank" rel="noopener">
-                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 10H7v-2h10v2zm0-3H7V7h10v2z"/>
-                    </svg>
-                    <span>MAX</span>
-                </a>
-
-                <a href="https://wa.me/79225039888" class="clean-btn btn-wa" target="_blank" rel="noopener">
-                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0012.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 012.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 01-1.26-4.36c0-4.54 3.7-8.24 8.25-8.24zm4.52 11.64c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43l-.48-.01c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.77 2.7 4.29 3.78.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.11-.23-.18-.48-.3z"/>
-                    </svg>
-                    <span>WhatsApp</span>
-                </a>
-
-                <a href="https://vk.com/sokovikova_svetlana" class="clean-btn btn-vk" target="_blank" rel="noopener">
-                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                        <path d="M15.68 2H8.32C4.83 2 2 4.83 2 8.32v7.36C2 19.17 4.83 22 8.32 22h7.36c3.49 0 6.32-2.83 6.32-6.32V8.32C22 4.83 19.17 2 15.68 2zm3.32 14.54h-1.62c-.61 0-.8-.49-1.89-1.58-.96-.94-1.38-1.06-1.62-1.06-.33 0-.43.1-.43.57v1.43c0 .39-.12.64-1.15.64-1.7 0-3.58-1.04-4.91-2.96-2-2.87-2.55-5.03-2.55-5.47 0-.25.1-.48.58-.48h1.62c.44 0 .61.2.78.68.85 2.48 2.28 4.65 2.87 4.65.22 0 .32-.1.32-.67V9.75c-.07-1.22-.71-1.32-.71-1.75 0-.21.17-.41.44-.41h2.55c.36 0 .49.19.49.62v3.35c0 .36.16.48.27.48.22 0 .4-.12.82-.54 1.27-1.42 2.18-3.57 2.18-3.57.12-.25.32-.48.77-.48h1.62c.49 0 .6.25.49.62-.2 0.94-2.18 3.73-2.28 3.88-.23.36-.32.52 0 .95.23.31 1 1 1.52 1.6 1.05 1.21 1.34 1.77 1.49 2.03.1.25-.09.5-.49.5z"/>
-                    </svg>
-                    <span>ВКонтакте</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+                const ul = nav.querySelector('ul');
+                ul.style.flexDirection = 'column';
+                ul.style.gap = '14px';
+            }
+        });
+    }
+});
