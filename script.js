@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Плавный переход по якорным ссылкам меню
+    // 1. Плавный переход по ссылкам навигации
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const targetId = this.getAttribute('href');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. Логика всплывающего окна (модалки)
+    // 2. Логика всплывающего окна
     const modal = document.getElementById('contact-modal');
     const closeBtn = document.getElementById('modal-close');
     const openButtons = document.querySelectorAll('.open-modal-btn');
@@ -67,8 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. Задел под автопостинг мамы через Google Таблицу
-    // Вставь сюда URL своего веб-приложения Google Apps Script, когда создадим бота
+    // 4. Поддержка автопостинга статей из Google Таблицы через Telegram-бота
     const GOOGLE_SHEET_API_URL = ''; 
 
     if (GOOGLE_SHEET_API_URL) {
@@ -78,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const container = document.getElementById('articles-container');
                 if (!posts || posts.length === 0 || !container) return;
                 
-                // Динамическое добавление записей из таблицы
                 container.innerHTML = '';
                 posts.forEach(post => {
                     const card = document.createElement('div');
@@ -99,6 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     container.appendChild(card);
                 });
             })
-            .catch(err => console.log('Подгрузка заметок из таблицы в ожидании настройки:', err));
+            .catch(err => console.log('Синхронизация заметок:', err));
     }
 });
