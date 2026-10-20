@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Плавный скролл по якорным ссылкам шапки
+    // 1. Плавный переход по якорным ссылкам меню
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const targetId = this.getAttribute('href');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. Всплывающее окно контактов
+    // 2. Логика всплывающего окна (модалки)
     const modal = document.getElementById('contact-modal');
     const closeBtn = document.getElementById('modal-close');
     const openButtons = document.querySelectorAll('.open-modal-btn');
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            modal.classList.add('active');
+            if (modal) modal.classList.add('active');
         });
     });
 
@@ -58,12 +58,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 nav.style.width = '100%';
                 nav.style.backgroundColor = '#ffffff';
                 nav.style.padding = '20px';
-                nav.style.boxShadow = '0 8px 15px rgba(0,0,0,0.1)';
+                nav.style.boxShadow = '0 8px 15px rgba(0,0,0,0.08)';
 
                 const ul = nav.querySelector('ul');
                 ul.style.flexDirection = 'column';
-                ul.style.gap = '15px';
+                ul.style.gap = '14px';
             }
         });
+    }
+
+    // 4. Задел под автопостинг мамы через Google Таблицу
+    // Вставь сюда URL своего веб-приложения Google Apps Script, когда создадим бота
+    const GOOGLE_SHEET_API_URL = ''; 
+
+    if (GOOGLE_SHEET_API_URL) {
+        fetch(GOOGLE_SHEET_API_URL)
+            .then(res => res.json())
+            .then(posts => {
+                const container = document.getElementById('articles-container');
+                if (!posts || posts.length === 0 || !container) return;
+                
+                // Динамическое добавление записей из таблицы
+                container.innerHTML = '';
+                posts.forEach(post => {
+                    const card = document.createElement('div');
+                    card.className = 'quote-card';
+                    card.innerHTML = `
+                        <div class="quote-icon">“</div>
+                        <div class="quote-body">
+                            <p class="quote-text">${post.text}</p>
+                            <div class="quote-author-row">
+                                <img src="about (7).jpg" alt="Светлана Соковикова" class="quote-avatar">
+                                <div>
+                                    <span class="quote-name">Светлана Соковикова</span>
+                                    <span class="quote-date">${post.date || 'Новая запись'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            })
+            .catch(err => console.log('Подгрузка заметок из таблицы в ожидании настройки:', err));
     }
 });
