@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Плавный переход по ссылкам навигации
+    // 1. Плавная навигация по якорным ссылкам
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const targetId = this.getAttribute('href');
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. Логика всплывающего окна
+    // 2. Всплывающее окно контактов
     const modal = document.getElementById('contact-modal');
     const closeBtn = document.getElementById('modal-close');
     const openButtons = document.querySelectorAll('.open-modal-btn');
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. Поддержка автопостинга статей из Google Таблицы через Telegram-бота
+    // 4. Поддержка автопостинга заметок из Google Таблицы через Telegram-бота
     const GOOGLE_SHEET_API_URL = ''; 
 
     if (GOOGLE_SHEET_API_URL) {
