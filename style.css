@@ -49,7 +49,7 @@ img {
 }
 
 .container {
-    max-width: 1140px;
+    max-width: 1180px;
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -132,7 +132,9 @@ img {
     color: #FFFFFF;
 }
 
-/* Шапка */
+/* =========================================
+   ИДЕАЛЬНО ВЫРОВНЕННАЯ ШАПКА
+   ========================================= */
 .header {
     background-color: #FFFFFF;
     position: sticky;
@@ -143,7 +145,7 @@ img {
 }
 
 .header-container {
-    max-width: 1240px; /* Сделали шире, чтобы всё умещалось в одну строку */
+    max-width: 1280px;
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
@@ -157,8 +159,9 @@ img {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--primary);
-    white-space: nowrap; /* Запрещаем перенос фамилии на вторую строку */
+    white-space: nowrap;
     flex-shrink: 0;
+    line-height: 1;
 }
 
 .nav {
@@ -170,24 +173,24 @@ img {
     display: flex;
     list-style: none;
     align-items: center;
-    gap: 14px; /* Компактное расстояние между ссылками */
+    gap: 16px;
 }
 
 .nav-list a {
-    font-size: 0.82rem; /* Слегка уменьшили кегль, чтобы меню не ломалось */
+    font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-main);
-    white-space: nowrap; /* Текст пунктов строго в одну строчку */
-    line-height: 1.2;
+    white-space: nowrap;
+    line-height: 1;
 }
 
 .nav-list a:hover {
     color: var(--primary);
 }
 
-.header .btn {
+.header-btn {
     white-space: nowrap;
-    padding: 10px 18px;
+    padding: 9px 18px;
     font-size: 0.85rem;
     flex-shrink: 0;
 }
@@ -200,6 +203,7 @@ img {
     cursor: pointer;
     color: var(--primary);
 }
+
 /* Первый экран */
 .hero {
     padding: 70px 0;
@@ -611,7 +615,9 @@ img {
     text-decoration: underline;
 }
 
-/* Всплывающее окно */
+/* =========================================
+   ВСПЛЫВАЮЩЕЕ ОКНО И ИКОНКИ МЕССЕНДЖЕРОВ
+   ========================================= */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -632,7 +638,7 @@ img {
     background: #FFFFFF;
     border-radius: 12px;
     padding: 35px 28px;
-    max-width: 400px;
+    max-width: 420px;
     width: 90%;
     position: relative;
     box-shadow: 0 15px 40px rgba(0,0,0,0.18);
@@ -681,37 +687,49 @@ img {
 .modal-messengers-clean {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .clean-btn {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 12px 18px;
+    justify-content: flex-start;
+    padding: 13px 20px;
     border-radius: 8px;
     font-weight: 500;
     font-size: 0.95rem;
     color: #2D312E;
-    background: #F3F1ED;
+    background: #F8F6F2;
     border: 1px solid var(--border-color);
     transition: all 0.2s ease;
 }
 
+.social-svg {
+    margin-right: 14px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
 .clean-btn:hover {
-    background: #ECE7DF;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
-.btn-icon {
-    font-size: 1.1rem;
+.clean-btn:hover .social-svg {
+    transform: scale(1.1);
 }
 
-.btn-tg:hover { color: #2AABEE; border-color: #2AABEE; }
-.btn-max:hover { color: #5142E6; border-color: #5142E6; }
-.btn-wa:hover { color: #25D366; border-color: #25D366; }
-.btn-vk:hover { color: #0077FF; border-color: #0077FF; }
+.btn-tg:hover { color: #2AABEE; border-color: #2AABEE; background: #FFFFFF; }
+.btn-tg:hover .social-svg { fill: #2AABEE; }
+
+.btn-max:hover { color: #5142E6; border-color: #5142E6; background: #FFFFFF; }
+.btn-max:hover .social-svg { fill: #5142E6; }
+
+.btn-wa:hover { color: #25D366; border-color: #25D366; background: #FFFFFF; }
+.btn-wa:hover .social-svg { fill: #25D366; }
+
+.btn-vk:hover { color: #0077FF; border-color: #0077FF; background: #FFFFFF; }
+.btn-vk:hover .social-svg { fill: #0077FF; }
 
 /* Мобильная адаптивность */
 @media (max-width: 992px) {
@@ -727,7 +745,7 @@ img {
     .section { padding: 40px 0; }
     .nav { display: none; }
     .mobile-menu-btn { display: block; }
-    .header .btn { display: none; }
+    .header .header-btn { display: none; }
     
     .grid-2, .grid-3, .pricing-grid, .articles-grid, .publications-grid {
         grid-template-columns: 1fr;
