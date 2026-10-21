@@ -769,4 +769,78 @@ img {
     
     .about-gallery { grid-template-columns: 1fr; }
     .about-gallery .gallery-item:first-child { grid-column: span 1; }
+}/* =========================================
+   ВСПЛЫВАЮЩИЙ БАННЕР АКЦИИ (СПЕЦПРЕДЛОЖЕНИЕ)
+   ========================================= */
+.promo-modal {
+    position: fixed;
+    bottom: -150px;
+    right: 25px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 360px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    border: 2px solid var(--secondary);
+    z-index: 1500;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.promo-modal.active {
+    bottom: 25px;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.promo-content {
+    position: relative;
+    text-align: left;
+}
+
+.promo-badge {
+    display: inline-block;
+    background: var(--secondary);
+    color: #FFFFFF;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.promo-content h3 {
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+    color: var(--primary);
+}
+
+.promo-content p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    line-height: 1.4;
+}
+
+.promo-close {
+    position: absolute;
+    top: -10px;
+    right: -5px;
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #888;
+}
+
+.promo-close:hover {
+    color: #000;
+}
+
+#promo-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
 }
