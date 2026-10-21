@@ -29,8 +29,9 @@ async function startBot() {
   const userSessions = new Map();
   const authorizedUsers = new Set();
 
+  // НОВОЕ МЕНЮ С КНОПКОЙ "ТОВАР ПРИШЕЛ"
   const adminMenu = Markup.keyboard([
-    ['➕ Добавить товар'],
+    ['➕ Добавить товар', '✅ Товар пришел'],
     ['📦 Внести Карго', '🚚 Внести СДЭК'],
     ['💰 Зафиксировать продажу', '❌ Отмена']
   ]).resize();
@@ -72,7 +73,6 @@ async function startBot() {
     await ctx.reply('Действие отменено.', adminMenu);
   });
 
-  // Добавить товар
   bot.hears('➕ Добавить товар', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'PROD_NAME' });
     await ctx.reply('📝 *Шаг 1 из 5:*\nНаименование товара (например: `Nike Blazer 77`):', {
@@ -81,19 +81,56 @@ async function startBot() {
     });
   });
 
-  // Карго
   bot.hears('📦 Внести Карго', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'CARGO_BATCH' });
     await ctx.reply('📦 Номер объединения для Карго:');
   });
 
-  // СДЭК
   bot.hears('🚚 Внести СДЭК', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'CDEK_BATCH' });
     await ctx.reply('🚚 Номер объединения для СДЭК:');
   });
 
-  // Продажа
+  // НОВЫЙ БЛОК: ТОВАР ПРИШЕЛ
+  bot.hears('✅ Товар пришел', async (ctx) => {
+    await ctx.reply('⏳ Ищу товары в пути...');
+    const res = await sendToGAS({ action: 'search_products' });
+
+    if (!res || res.status !== 'ok') {
+      return ctx.reply(`⚠️ Ошибка от таблицы: ${res?.error || 'Сбой связи'}`, adminMenu);
+    }
+
+    const items = res.items || [];
+    // Оставляем только те, что еще не "В наличии"
+    const arrivingItems = items.filter(item => item.status !== 'В наличии');
+
+    if (arrivingItems.length === 0) {
+      return ctx.reply('Нет товаров со статусом "В пути" (либо всё уже пришло/продано).', adminMenu);
+    }
+
+    const buttons = arrivingItems.map(item => {
+      const batchStr = item.batch ? ` (${item.batch})` : '';
+      return [Markup.button.callback(`📦 #${item.id} ${item.name}${batchStr}`, `arrive_${item.id}`)];
+    });
+
+    await ctx.reply('Выберите товар, который приехал на склад:', Markup.inlineKeyboard(buttons));
+  });
+
+  // ОБРАБОТКА КЛИКА "ПРИЕХАЛ"
+  bot.action(/arrive_(\d+)/, async (ctx) => {
+    const prodId = ctx.match[1];
+    await ctx.answerCbQuery('Отмечаю...');
+    await ctx.editMessageText('⏳ Обновляю статус в таблице...');
+
+    const res = await sendToGAS({ action: 'mark_arrived', id: prodId });
+    if (res && res.status === 'ok') {
+      await ctx.editMessageText(`✅ Товар "${res.name}" (ID: #${prodId}) переведен в статус "В наличии"!`);
+    } else {
+      await ctx.editMessageText(`⚠️ Ошибка: ${res?.error || 'Сбой'}`);
+    }
+  });
+
+  // ПРОДАЖА (Показывает все: и те что в пути, и те что в наличии)
   bot.hears('💰 Зафиксировать продажу', async (ctx) => {
     await ctx.reply('⏳ Загружаю актуальные товары...');
     const res = await sendToGAS({ action: 'search_products' });
@@ -109,10 +146,12 @@ async function startBot() {
 
     const buttons = items.map(item => {
       const batchStr = item.batch ? ` (${item.batch})` : '';
-      return [Markup.button.callback(`#${item.id} ${item.name}${batchStr}`, `sell_${item.id}`)];
+      // Добавляем эмодзи для наглядности (В пути - 🚚, В наличии - 📦)
+      const icon = item.status === 'В наличии' ? '📦' : '🚚';
+      return [Markup.button.callback(`${icon} #${item.id} ${item.name}${batchStr}`, `sell_${item.id}`)];
     });
 
-    await ctx.reply('Выберите товар из списка:', Markup.inlineKeyboard(buttons));
+    await ctx.reply('Выберите товар для продажи:', Markup.inlineKeyboard(buttons));
   });
 
   bot.action(/sell_(\d+)/, async (ctx) => {
@@ -135,6 +174,7 @@ async function startBot() {
       return ctx.reply('Отменено.', adminMenu);
     }
 
+    // ВЕТКА: ДОБАВЛЕНИЕ ТОВАРА
     if (state.step === 'PROD_NAME') {
       state.name = text;
       state.step = 'PROD_BATCH';
@@ -178,12 +218,12 @@ async function startBot() {
       userSessions.delete(uid);
 
       if (res && res.status === 'ok') {
-        return ctx.reply(`✅ Товар #${res.id} "${state.name}" успешно добавлен!`, adminMenu);
+        return ctx.reply(`✅ Товар #${res.id} "${state.name}" успешно добавлен со статусом "В пути"!`, adminMenu);
       }
       return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
 
-    // Карго
+    // ВЕТКА: КАРГО
     if (state.step === 'CARGO_BATCH') {
       state.batch = text;
       state.step = 'CARGO_WEIGHT';
@@ -205,7 +245,7 @@ async function startBot() {
       return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
 
-    // СДЭК
+    // ВЕТКА: СДЭК
     if (state.step === 'CDEK_BATCH') {
       state.batch = text;
       state.step = 'CDEK_WEIGHT';
@@ -227,7 +267,7 @@ async function startBot() {
       return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
 
-    // Продажа
+    // ВЕТКА: ПРОДАЖА
     if (state.step === 'SELL_PRICE') {
       const sellPrice = parseFloat(text.replace(',', '.'));
       if (isNaN(sellPrice) || sellPrice <= 0) return ctx.reply('Введите корректную сумму:');
@@ -251,4 +291,5 @@ async function startBot() {
   } catch (err) {
     console.error('Ошибка launch():', err);
   }
+}
 }
