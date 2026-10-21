@@ -34,7 +34,7 @@ async function initBot() {
   const { Telegraf, Markup } = require('telegraf');
   const bot = new Telegraf(token);
 
-  const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbzVMFAdOuj63GvM6Xy23WYQutPnrCfsLg_1BaQhjRpSEIYAtpnV66pxTHWJ0vcbWW5y/exec';
+  const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzVMFAdOuj63GvM6Xy23WYQutPnrCfsLg_1BaQhjRpSEIYAtpnV66pxTHWJ0vcbWW5y/exec';
   const BOT_PASSWORD = '2888';
 
   const userSessions = new Map();
