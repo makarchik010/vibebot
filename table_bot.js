@@ -2,7 +2,7 @@ const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
 
 // НАСТРОЙКИ
-const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'ВСТАВЬ_СЮДА_СВОЙ_APPS_SCRIPT_URL';
+const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzVMFAdOuj63GvM6Xy23WYQutPnrCfsLg_1BaQhjRpSEIYAtpnV66pxTHWJ0vcbWW5y/exec';
 const BOT_PASSWORD = '2888';
 
 const token = process.env.TABLE_BOT_TOKEN;
