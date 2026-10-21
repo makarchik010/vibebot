@@ -192,17 +192,6 @@
                 </div>
             </div>
 
-            <!-- Участие в проектах: переход на подсайт events.html -->
-            <div class="business-subblock mt-4">
-                <h3 class="subblock-title">Участие в проектах организаций Удмуртии</h3>
-                <p class="subblock-desc">Форумы, обучающие семинары и программы развития управленческих кадров предприятий республики</p>
-                <div class="center mt-2">
-                    <a href="events.html" class="btn btn-outline" style="padding: 14px 30px; font-size: 1rem;">
-                        Смотреть все проекты и участие (14 мероприятий) →
-                    </a>
-                </div>
-            </div>
-
             <!-- Публикации в прессе -->
             <div class="business-subblock mt-4">
                 <h3 class="subblock-title">Публикации в официальных изданиях</h3>
@@ -242,11 +231,11 @@
                     <div class="price-body">
                         <div class="price-item">
                             <span>Консультация (60 минут)</span>
-                            <span class="price">2 500 ₽</span>
+                            <span class="price" id="price-online-single">2 500 ₽</span>
                         </div>
                         <div class="price-item highlight">
                             <span>Пакет из 5 консультаций</span>
-                            <span class="price">10 000 ₽</span>
+                            <span class="price" id="price-online-pack">10 000 ₽</span>
                         </div>
                     </div>
                 </div>
@@ -260,11 +249,11 @@
                     <div class="price-body">
                         <div class="price-item">
                             <span>Консультация (60 минут)</span>
-                            <span class="price">3 000 ₽</span>
+                            <span class="price" id="price-offline-single">3 000 ₽</span>
                         </div>
                         <div class="price-item highlight">
                             <span>Пакет из 5 консультаций</span>
-                            <span class="price">12 500 ₽</span>
+                            <span class="price" id="price-offline-pack">12 500 ₽</span>
                         </div>
                     </div>
                 </div>
@@ -306,7 +295,7 @@
         </div>
     </section>
 
-    <!-- Блок: Статьи и мысли -->
+    <!-- Блок: Статьи и мысли (Автономно обновляется мамой из бота) -->
     <section id="articles" class="section bg-light">
         <div class="container">
             <div class="section-header center">
@@ -354,6 +343,17 @@
         </div>
     </footer>
 
+    <!-- ВСПЛЫВАЮЩИЙ БАННЕР СПЕЦПРЕДЛОЖЕНИЯ (УПРАВЛЯЕТСЯ БОТОМ) -->
+    <div id="promo-popup" class="promo-modal">
+        <div class="promo-content">
+            <button class="promo-close" id="promo-close">&times;</button>
+            <span class="promo-badge" id="promo-badge">Спецпредложение</span>
+            <h3 id="promo-title">Ознакомительная встреча</h3>
+            <p id="promo-text">Запишитесь на онлайн-консультацию со скидкой 20% в этом месяце</p>
+            <button type="button" class="btn btn-primary open-modal-btn" id="promo-btn">Записаться по акции</button>
+        </div>
+    </div>
+
     <!-- Всплывающее окно контактов -->
     <div id="contact-modal" class="modal-overlay">
         <div class="modal-window">
@@ -383,7 +383,7 @@
                     <span>WhatsApp</span>
                 </a>
 
-                <a href="https://m.vk.ru/id268862930" class="clean-btn btn-vk" target="_blank" rel="noopener">
+                <a href="https://vk.com/sokovikova_svetlana" class="clean-btn btn-vk" target="_blank" rel="noopener">
                     <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
                         <path d="M15.68 2H8.32C4.83 2 2 4.83 2 8.32v7.36C2 19.17 4.83 22 8.32 22h7.36c3.49 0 6.32-2.83 6.32-6.32V8.32C22 4.83 19.17 2 15.68 2zm3.32 14.54h-1.62c-.61 0-.8-.49-1.89-1.58-.96-.94-1.38-1.06-1.62-1.06-.33 0-.43.1-.43.57v1.43c0 .39-.12.64-1.15.64-1.7 0-3.58-1.04-4.91-2.96-2-2.87-2.55-5.03-2.55-5.47 0-.25.1-.48.58-.48h1.62c.44 0 .61.2.78.68.85 2.48 2.28 4.65 2.87 4.65.22 0 .32-.1.32-.67V9.75c-.07-1.22-.71-1.32-.71-1.75 0-.21.17-.41.44-.41h2.55c.36 0 .49.19.49.62v3.35c0 .36.16.48.27.48.22 0 .4-.12.82-.54 1.27-1.42 2.18-3.57 2.18-3.57.12-.25.32-.48.77-.48h1.62c.49 0 .6.25.49.62-.2 0.94-2.18 3.73-2.28 3.88-.23.36-.32.52 0 .95.23.31 1 1 1.52 1.6 1.05 1.21 1.34 1.77 1.49 2.03.1.25-.09.5-.49.5z"/>
                     </svg>
