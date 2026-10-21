@@ -1,37 +1,28 @@
 const http = require('http');
+const { Telegraf, Markup } = require('telegraf');
 
-// 1. МГНОВЕННЫЙ ЗАПУСК СЕРВЕРА ДЛЯ RENDER
 const port = process.env.PORT || 10000;
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-  res.end('Inventory Bot is Online and Running');
+  res.end('Inventory Bot Online');
 });
 
 server.listen(port, '0.0.0.0', () => {
-  console.log(`>>> HTTP сервер успешно запущен на порту ${port} <<<`);
-  initBot();
+  console.log(`Сервер запущен на порту ${port}`);
+  startBot();
 });
 
-// Глобальные перехватчики, чтобы процесс не падал
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-});
+process.on('unhandledRejection', (r) => console.error('Rejection:', r));
+process.on('uncaughtException', (e) => console.error('Exception:', e));
 
-// 2. ОСНОВНАЯ ЛОГИКА БОТА
-async function initBot() {
+async function startBot() {
   const token = process.env.TABLE_BOT_TOKEN;
-  
   if (!token) {
-    console.error('КРИТИЧЕСКАЯ ОШИБКА: TABLE_BOT_TOKEN не задан!');
+    console.error('ОШИБКА: TABLE_BOT_TOKEN не задан!');
     return;
   }
 
-  const { Telegraf, Markup } = require('telegraf');
   const bot = new Telegraf(token);
-
   const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzVMFAdOuj63GvM6Xy23WYQutPnrCfsLg_1BaQhjRpSEIYAtpnV66pxTHWJ0vcbWW5y/exec';
   const BOT_PASSWORD = '2888';
 
@@ -52,33 +43,22 @@ async function initBot() {
         body: JSON.stringify(payload),
         redirect: 'follow'
       });
-      
-      const rawText = await res.text();
-      try {
-        return JSON.parse(rawText);
-      } catch (e) {
-        return { status: 'error', error: 'Скрипт вернул не JSON: ' + rawText.slice(0, 100) };
-      }
+      return await res.json();
     } catch (err) {
       return { status: 'error', error: err.message };
     }
   }
 
-  // Пароль 2888
   bot.use(async (ctx, next) => {
     const uid = ctx.from?.id;
     if (!uid) return;
-
-    if (authorizedUsers.has(uid)) {
-      return next();
-    }
+    if (authorizedUsers.has(uid)) return next();
 
     const text = ctx.message?.text?.trim();
     if (text === BOT_PASSWORD) {
       authorizedUsers.add(uid);
       return ctx.reply('🔓 Доступ разрешен. Бот готов к работе.', adminMenu);
     }
-
     return ctx.reply('🔒 Введите пароль доступа:');
   });
 
@@ -92,93 +72,47 @@ async function initBot() {
     await ctx.reply('Действие отменено.', adminMenu);
   });
 
-  // 1. Добавить товар
+  // Добавить товар
   bot.hears('➕ Добавить товар', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'PROD_NAME' });
-    await ctx.reply('📝 *Шаг 1 из 5:*\nВведите наименование товара:', {
+    await ctx.reply('📝 *Шаг 1 из 5:*\nНаименование товара (например: `Nike Blazer 77`):', {
       parse_mode: 'Markdown',
       ...Markup.keyboard([['❌ Отмена']]).resize()
     });
   });
 
-  // 2. Карго
+  // Карго
   bot.hears('📦 Внести Карго', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'CARGO_BATCH' });
-    await ctx.reply('📦 Номер объединения для Карго:', {
-      parse_mode: 'Markdown',
-      ...Markup.keyboard([['❌ Отмена']]).resize()
-    });
+    await ctx.reply('📦 Номер объединения для Карго:');
   });
 
-  // 3. СДЭК
+  // СДЭК
   bot.hears('🚚 Внести СДЭК', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'CDEK_BATCH' });
-    await ctx.reply('🚚 Номер объединения для СДЭК:', {
-      parse_mode: 'Markdown',
-      ...Markup.keyboard([['❌ Отмена']]).resize()
-    });
+    await ctx.reply('🚚 Номер объединения для СДЭК:');
   });
 
-  // 4. Зафиксировать продажу (ПАРСИТ ID ИЗ СТОЛБЦА НАИМЕНОВАНИЯ)
+  // Продажа
   bot.hears('💰 Зафиксировать продажу', async (ctx) => {
-    await ctx.reply('⏳ Запрашиваю данные из таблицы...');
+    await ctx.reply('⏳ Загружаю актуальные товары...');
     const res = await sendToGAS({ action: 'search_products' });
-    
+
     if (!res || res.status !== 'ok') {
-      return ctx.reply(`⚠️ Ошибка от таблицы: ${res?.error || 'Не удалось получить данные'}`, adminMenu);
+      return ctx.reply(`⚠️ Ошибка от таблицы: ${res?.error || 'Сбой связи'}`, adminMenu);
     }
 
-    const items = res.items;
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return ctx.reply('В таблице нет доступных товаров для продажи.', adminMenu);
+    const items = res.items || [];
+    if (items.length === 0) {
+      return ctx.reply('Все позиции уже проданы либо лист «Товары» пуст.', adminMenu);
     }
 
-    const buttons = [];
-    items.forEach((item, idx) => {
-      let rawText = '';
-      let batch = '';
-      let rowId = '';
-
-      if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-        rawText = String(item.name || '').trim();
-        batch = item.batch ? String(item.batch).trim() : '';
-        rowId = item.id;
-      } else if (Array.isArray(item)) {
-        rawText = String(item[1] || item[0] || '').trim();
-        batch = item[2] ? String(item[2]).trim() : '';
-        rowId = item[0];
-      }
-
-      // Отсекаем шапку и пустые строки
-      if (!rawText || rawText.includes('ИТОГО') || rawText.includes('Наименование')) {
-        return;
-      }
-
-      // Если в начале текста стоит число (например "2 Майка under arm")
-      const match = rawText.match(/^(\d+)\s+(.+)$/);
-      let displayId = rowId;
-      let displayName = rawText;
-
-      if (match) {
-        displayId = match[1]; // "2"
-        displayName = match[2]; // "Майка under arm"
-      } else if (!displayId || String(displayId).startsWith('Позиция')) {
-        displayId = idx + 1;
-      }
-
-      const batchPart = batch ? ` (${batch})` : '';
-      const buttonLabel = `#${displayId} ${displayName}${batchPart}`;
-
-      // В callback передаем реальный ID для точной фиксации продажи
-      buttons.push([Markup.button.callback(buttonLabel, `sell_${displayId}`)]);
+    const buttons = items.map(item => {
+      const batchStr = item.batch ? ` (${item.batch})` : '';
+      return [Markup.button.callback(`#${item.id} ${item.name}${batchStr}`, `sell_${item.id}`)];
     });
 
-    if (buttons.length === 0) {
-      return ctx.reply('Не удалось распознать позиции.', adminMenu);
-    }
-
-    // Выводим кнопки (порцией до 25 штук)
-    await ctx.reply('Выберите товар для продажи:', Markup.inlineKeyboard(buttons.slice(-25)));
+    await ctx.reply('Выберите товар из списка:', Markup.inlineKeyboard(buttons));
   });
 
   bot.action(/sell_(\d+)/, async (ctx) => {
@@ -190,7 +124,6 @@ async function initBot() {
     });
   });
 
-  // Обработка текстового ввода
   bot.on('text', async (ctx, next) => {
     const uid = ctx.from.id;
     const state = userSessions.get(uid);
@@ -202,11 +135,10 @@ async function initBot() {
       return ctx.reply('Отменено.', adminMenu);
     }
 
-    // Ветка: Товар
     if (state.step === 'PROD_NAME') {
       state.name = text;
       state.step = 'PROD_BATCH';
-      return ctx.reply('📦 Номер объединения/партии:');
+      return ctx.reply('📦 Номер объединения:');
     }
 
     if (state.step === 'PROD_BATCH') {
@@ -228,7 +160,7 @@ async function initBot() {
       if (isNaN(rate) || rate <= 0) return ctx.reply('Введите курс числом:');
       state.rate = rate;
       state.step = 'PROD_WEIGHT';
-      return ctx.reply('⚖️ Складской чистый вес позиции в граммах:');
+      return ctx.reply('⚖️ Складской вес в граммах:');
     }
 
     if (state.step === 'PROD_WEIGHT') {
@@ -236,102 +168,77 @@ async function initBot() {
       if (isNaN(weight) || weight <= 0) return ctx.reply('Введите вес числом в граммах:');
       state.weight = weight;
       state.step = 'PROD_SOURCE';
-      return ctx.reply('🏷 Источник и назначение (например: `Пойзон/авито`):');
+      return ctx.reply('🏷 Назначение (например: `Пойзон/авито`):');
     }
 
     if (state.step === 'PROD_SOURCE') {
       state.sourceDest = text;
-      await ctx.reply('⏳ Записываю позицию в Google Таблицу...');
-      
+      await ctx.reply('⏳ Записываю позицию...');
       const res = await sendToGAS({ action: 'add_product', ...state });
       userSessions.delete(uid);
 
       if (res && res.status === 'ok') {
-        return ctx.reply(
-          `✅ *Товар успешно добавлен!*\n\n` +
-          `• ID: *#${res.id}*\n` +
-          `• Товар: *${state.name}*\n` +
-          `• Партия: *${state.batch}*\n` +
-          `• Сумма: *${(state.cnyPrice * state.rate).toFixed(2)} ₽*`,
-          { parse_mode: 'Markdown', ...adminMenu }
-        );
+        return ctx.reply(`✅ Товар #${res.id} "${state.name}" успешно добавлен!`, adminMenu);
       }
-      return ctx.reply(`⚠️ Ошибка сохранения: ${res?.error || 'Неизвестный сбой'}`, adminMenu);
+      return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
 
-    // Ветка: Карго
+    // Карго
     if (state.step === 'CARGO_BATCH') {
       state.batch = text;
       state.step = 'CARGO_WEIGHT';
-      return ctx.reply('⚖️ Общий вес накладной Карго в граммах:');
+      return ctx.reply('⚖️ Общий вес Карго (в граммах):');
     }
 
     if (state.step === 'CARGO_WEIGHT') {
-      const weight = parseFloat(text.replace(/[^\d.]/g, ''));
-      if (isNaN(weight) || weight <= 0) return ctx.reply('Введите вес Карго числом:');
-      state.weight = weight;
+      state.weight = parseFloat(text.replace(/[^\d.]/g, ''));
       state.step = 'CARGO_PRICE';
-      return ctx.reply('💰 Общая стоимость доставки Карго в рублях:');
+      return ctx.reply('💰 Стоимость доставки Карго в рублях:');
     }
 
     if (state.step === 'CARGO_PRICE') {
-      const price = parseFloat(text.replace(',', '.'));
-      if (isNaN(price) || price <= 0) return ctx.reply('Введите стоимость числом:');
-      state.price = price;
-
+      state.price = parseFloat(text.replace(',', '.'));
       await ctx.reply('⏳ Сохраняю Карго...');
       const res = await sendToGAS({ action: 'add_cargo', ...state });
       userSessions.delete(uid);
-
-      if (res && res.status === 'ok') {
-        return ctx.reply(`✅ Карго на объединение ${state.batch} записано!`, adminMenu);
-      }
+      if (res && res.status === 'ok') return ctx.reply(`✅ Карго на партию ${state.batch} записано!`, adminMenu);
       return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
 
-    // Ветка: СДЭК
+    // СДЭК
     if (state.step === 'CDEK_BATCH') {
       state.batch = text;
       state.step = 'CDEK_WEIGHT';
-      return ctx.reply('⚖️ Общий вес СДЭК в граммах:');
+      return ctx.reply('⚖️ Общий вес СДЭК (в граммах):');
     }
 
     if (state.step === 'CDEK_WEIGHT') {
-      const weight = parseFloat(text.replace(/[^\d.]/g, ''));
-      if (isNaN(weight) || weight <= 0) return ctx.reply('Введите вес СДЭК числом:');
-      state.weight = weight;
+      state.weight = parseFloat(text.replace(/[^\d.]/g, ''));
       state.step = 'CDEK_PRICE';
-      return ctx.reply('💰 Сумма доставки СДЭК в рублях:');
+      return ctx.reply('💰 Стоимость СДЭК в рублях:');
     }
 
     if (state.step === 'CDEK_PRICE') {
-      const price = parseFloat(text.replace(',', '.'));
-      if (isNaN(price) || price <= 0) return ctx.reply('Введите сумму числом:');
-      state.price = price;
-
+      state.price = parseFloat(text.replace(',', '.'));
       await ctx.reply('⏳ Заношу СДЭК...');
       const res = await sendToGAS({ action: 'add_cdek', ...state });
       userSessions.delete(uid);
-
-      if (res && res.status === 'ok') {
-        return ctx.reply(`✅ СДЭК на партию ${state.batch} записан!`, adminMenu);
-      }
+      if (res && res.status === 'ok') return ctx.reply(`✅ СДЭК на партию ${state.batch} записан!`, adminMenu);
       return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
 
-    // Ветка: Продажа
+    // Продажа
     if (state.step === 'SELL_PRICE') {
       const sellPrice = parseFloat(text.replace(',', '.'));
-      if (isNaN(sellPrice) || sellPrice <= 0) return ctx.reply('Введите корректную сумму продажи:');
-      
-      await ctx.reply('⏳ Обновляю статус в таблице...');
+      if (isNaN(sellPrice) || sellPrice <= 0) return ctx.reply('Введите корректную сумму:');
+      await ctx.reply('⏳ Обновляю статус...');
       const res = await sendToGAS({ action: 'sell_product', id: state.prodId, sellPrice });
       userSessions.delete(uid);
 
       if (res && res.status === 'ok') {
         return ctx.reply(`🎉 Товар "${res.name}" продан за ${sellPrice} ₽!`, adminMenu);
       }
-      return ctx.reply(`⚠️ Ошибка продажи: ${res?.error || 'Сбой'}`, adminMenu);
+      return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
 
     return next();
@@ -340,11 +247,8 @@ async function initBot() {
   try {
     await bot.telegram.deleteWebhook({ drop_pending_updates: true });
     await bot.launch();
-    console.log('>>> Бот учета успешно запущен! <<<');
+    console.log('Бот успешно запущен!');
   } catch (err) {
     console.error('Ошибка launch():', err);
   }
-
-  process.once('SIGINT', () => bot.stop('SIGINT'));
-  process.once('SIGTERM', () => bot.stop('SIGTERM'));
 }
