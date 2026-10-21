@@ -99,34 +99,31 @@ bot.hears('🚚 Внести СДЭК', async (ctx) => {
   });
 });
 
-// 4. Продажа с фильтром пустых позиций
+// 4. Продажа (выводит все доступные позиции)
 bot.hears('💰 Зафиксировать продажу', async (ctx) => {
   await ctx.reply('⏳ Загружаю актуальные товары на продажу...');
   const res = await sendToGAS({ action: 'search_products' });
   
   if (!res || res.status !== 'ok') {
-    return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Не удалось получить список'}`, adminMenu);
+    return ctx.reply(`⚠️ Ошибка от таблицы: ${res?.error || 'Не удалось получить список'}`, adminMenu);
   }
 
-  // Фильтруем пустые и битые записи (где нет названия или ID равен 0/пусто)
-  const validItems = (res.items || []).filter(item => {
-    const hasName = item.name && String(item.name).trim() !== '' && String(item.name) !== '0';
-    const hasId = item.id !== undefined && item.id !== null && String(item.id).trim() !== '';
-    return hasName && hasId;
-  });
+  const items = res.items || [];
 
-  if (validItems.length === 0) {
-    return ctx.reply('Нет активных товаров для продажи (все продано или товары с пометкой "себе").', adminMenu);
+  if (items.length === 0) {
+    return ctx.reply('Таблица вернула пустой список. Проверьте лист «Товары»: возможно, статус всех позиций уже стоит как "Продано" или строки пустые.', adminMenu);
   }
 
-  const buttons = validItems.map(item => {
-    const title = `#${item.id} ${item.name} ${item.batch ? `(${item.batch})` : ''}`.trim();
-    return [Markup.button.callback(title, `sell_${item.id}`)];
+  // Создаем кнопки для всех полученных товаров
+  const buttons = items.map(item => {
+    const id = item.id !== undefined && item.id !== '' ? item.id : '?';
+    const name = item.name || 'Без названия';
+    const batch = item.batch ? `(${item.batch})` : '';
+    return [Markup.button.callback(`#${id} ${name} ${batch}`.trim(), `sell_${id}`)];
   });
 
   await ctx.reply('Выберите товар из списка:', Markup.inlineKeyboard(buttons));
 });
-
 bot.action(/sell_(\d+)/, async (ctx) => {
   const prodId = ctx.match[1];
   userSessions.set(ctx.from.id, { step: 'SELL_PRICE', prodId });
