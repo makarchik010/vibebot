@@ -1,5 +1,25 @@
+// Подключение к твоему Google Apps Script веб-приложению
+const API_URL = "https://script.google.com/macros/s/AKfycbzQI7L2Adv8O00hiFRNWKFySy6S67-5DknOH986T8g0hlRAhXE_TtJwQO2dc3H8F5e_0Q/exec";
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Плавная навигация по якорным ссылкам
+    // -------------------------------------------------------------
+    // ОЧИСТКА ОТ ПАРАЗИТНЫХ СНОСОК
+    // -------------------------------------------------------------
+    function cleanCitations() {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        const regex = /\|\(cite:\s*\d+\)|\[site:\s*\d+\]|\(site:\s*\d+\)/gi;
+        while (node = walker.nextNode()) {
+            if (regex.test(node.nodeValue)) {
+                node.nodeValue = node.nodeValue.replace(regex, '');
+            }
+        }
+    }
+    cleanCitations();
+
+    // -------------------------------------------------------------
+    // ПЛАВНАЯ НАВИГАЦИЯ ПО ЯКОРЯМ
+    // -------------------------------------------------------------
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             const targetId = this.getAttribute('href');
@@ -16,33 +36,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. Всплывающее окно контактов
-    const modal = document.getElementById('contact-modal');
-    const closeBtn = document.getElementById('modal-close');
+    // -------------------------------------------------------------
+    // МОДАЛЬНОЕ ОКНО КОНТАКТОВ
+    // -------------------------------------------------------------
+    const contactModal = document.getElementById('contact-modal');
+    const contactCloseBtn = document.getElementById('modal-close');
     const openButtons = document.querySelectorAll('.open-modal-btn');
 
     openButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            if (modal) modal.classList.add('active');
+            if (contactModal) contactModal.classList.add('active');
         });
     });
 
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            modal.classList.remove('active');
+    if (contactCloseBtn) {
+        contactCloseBtn.addEventListener('click', () => {
+            contactModal.classList.remove('active');
         });
     }
 
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('active');
+    if (contactModal) {
+        contactModal.addEventListener('click', (e) => {
+            if (e.target === contactModal) {
+                contactModal.classList.remove('active');
             }
         });
     }
 
-    // 3. Мобильное бургер-меню
+    // -------------------------------------------------------------
+    // МОБИЛЬНОЕ МЕНЮ
+    // -------------------------------------------------------------
     const mobileBtn = document.getElementById('mobile-menu-btn');
     const nav = document.querySelector('.nav');
 
@@ -61,42 +85,95 @@ document.addEventListener('DOMContentLoaded', () => {
                 nav.style.boxShadow = '0 8px 15px rgba(0,0,0,0.08)';
 
                 const ul = nav.querySelector('ul');
-                ul.style.flexDirection = 'column';
-                ul.style.gap = '14px';
+                if (ul) {
+                    ul.style.flexDirection = 'column';
+                    ul.style.gap = '14px';
+                }
             }
         });
     }
 
-    // 4. Поддержка автопостинга заметок из Google Таблицы через Telegram-бота
-    const GOOGLE_SHEET_API_URL = ''; 
-
-    if (GOOGLE_SHEET_API_URL) {
-        fetch(GOOGLE_SHEET_API_URL)
+    // -------------------------------------------------------------
+    // СИНХРОНИЗАЦИЯ С GOOGLE ТАБЛИЦЕЙ (ДАННЫЕ ИЗ БОТА)
+    // -------------------------------------------------------------
+    if (API_URL && API_URL.startsWith('http')) {
+        fetch(API_URL)
             .then(res => res.json())
-            .then(posts => {
-                const container = document.getElementById('articles-container');
-                if (!posts || posts.length === 0 || !container) return;
-                
-                container.innerHTML = '';
-                posts.forEach(post => {
-                    const card = document.createElement('div');
-                    card.className = 'quote-card';
-                    card.innerHTML = `
-                        <div class="quote-icon">“</div>
-                        <div class="quote-body">
-                            <p class="quote-text">${post.text}</p>
-                            <div class="quote-author-row">
-                                <img src="about (7).jpg" alt="Светлана Соковикова" class="quote-avatar">
-                                <div>
-                                    <span class="quote-name">Светлана Соковикова</span>
-                                    <span class="quote-date">${post.date || 'Новая запись'}</span>
+            .then(data => {
+                if (!data) return;
+
+                // 1. Применение цветов и цен
+                if (data.config) {
+                    const root = document.documentElement;
+                    if (data.config.theme_color) root.style.setProperty('--primary', data.config.theme_color);
+                    if (data.config.theme_secondary) root.style.setProperty('--secondary', data.config.theme_secondary);
+
+                    // Онлайн цены
+                    const pOnlineSingle = document.getElementById('price-online-single');
+                    const pOnlinePack = document.getElementById('price-online-pack');
+                    if (pOnlineSingle && data.config.price_online_single) pOnlineSingle.textContent = data.config.price_online_single;
+                    if (pOnlinePack && data.config.price_online_pack) pOnlinePack.textContent = data.config.price_online_pack;
+
+                    // Офлайн цены
+                    const pOfflineSingle = document.getElementById('price-offline-single');
+                    const pOfflinePack = document.getElementById('price-offline-pack');
+                    if (pOfflineSingle && data.config.price_offline_single) pOfflineSingle.textContent = data.config.price_offline_single;
+                    if (pOfflinePack && data.config.price_offline_pack) pOfflinePack.textContent = data.config.price_offline_pack;
+
+                    // Всплывающее спецпредложение (баннер)
+                    if (data.config.promo_active === 'true' || data.config.promo_active === true) {
+                        const promoBanner = document.getElementById('promo-popup');
+                        const promoTitle = document.getElementById('promo-title');
+                        const promoText = document.getElementById('promo-text');
+                        const promoBtn = document.getElementById('promo-btn');
+                        
+                        if (promoTitle && data.config.promo_title) promoTitle.textContent = data.config.promo_title;
+                        if (promoText && data.config.promo_text) promoText.textContent = data.config.promo_text;
+                        if (promoBtn && data.config.promo_btn) promoBtn.textContent = data.config.promo_btn;
+
+                        setTimeout(() => {
+                            if (promoBanner) promoBanner.classList.add('active');
+                        }, 2000);
+                    }
+                }
+
+                // 2. Подгрузка статей мамы
+                if (data.articles && data.articles.length > 0) {
+                    const articlesContainer = document.getElementById('articles-container');
+                    if (articlesContainer) {
+                        articlesContainer.innerHTML = '';
+                        data.articles.forEach(item => {
+                            const card = document.createElement('div');
+                            card.className = 'quote-card';
+                            card.innerHTML = `
+                                <div class="quote-icon">“</div>
+                                <div class="quote-body">
+                                    <p class="quote-text">${item.text}</p>
+                                    <div class="quote-author-row">
+                                        <img src="about (7).jpg" alt="Светлана Соковикова" class="quote-avatar">
+                                        <div>
+                                            <span class="quote-name">${item.author || 'Светлана Соковикова'}</span>
+                                            <span class="quote-date">${item.date || ''}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
+                            `;
+                            articlesContainer.appendChild(card);
+                        });
+                    }
+                }
+
+                cleanCitations();
             })
-            .catch(err => console.log('Синхронизация заметок:', err));
+            .catch(err => console.log('Синхронизация данных:', err));
+    }
+
+    // Закрытие баннера спецпредложения
+    const promoClose = document.getElementById('promo-close');
+    const promoPopup = document.getElementById('promo-popup');
+    if (promoClose && promoPopup) {
+        promoClose.addEventListener('click', () => {
+            promoPopup.classList.remove('active');
+        });
     }
 });
