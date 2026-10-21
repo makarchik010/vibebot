@@ -119,7 +119,7 @@ async function initBot() {
     });
   });
 
-  // 4. Зафиксировать продажу (БЕЗ ЖЕСТКИХ ФИЛЬТРОВ, ПОКАЗЫВАЕТ ВСЕ ЧТО ЕСТЬ)
+  // 4. Зафиксировать продажу (ПАРСИТ ID ИЗ СТОЛБЦА НАИМЕНОВАНИЯ)
   bot.hears('💰 Зафиксировать продажу', async (ctx) => {
     await ctx.reply('⏳ Запрашиваю данные из таблицы...');
     const res = await sendToGAS({ action: 'search_products' });
@@ -130,37 +130,55 @@ async function initBot() {
 
     const items = res.items;
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return ctx.reply('Таблица вернула пустой массив items: []. В листе «Товары» нет строк или скрипт Apps Script их не считает.', adminMenu);
+      return ctx.reply('В таблице нет доступных товаров для продажи.', adminMenu);
     }
 
-    // Собираем кнопки прямо из сырых данных, не выкидывая ничего
     const buttons = [];
     items.forEach((item, idx) => {
-      let id = '';
-      let title = '';
+      let rawText = '';
+      let batch = '';
+      let rowId = '';
 
       if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-        id = item.id || (idx + 1);
-        title = item.name ? `${item.name} ${item.batch ? `(${item.batch})` : ''}` : `Позиция #${id}`;
+        rawText = String(item.name || '').trim();
+        batch = item.batch ? String(item.batch).trim() : '';
+        rowId = item.id;
       } else if (Array.isArray(item)) {
-        id = item[0] || (idx + 1);
-        title = item[1] ? `${item[1]} (${item[2] || ''})` : `Строка #${idx + 1}: ${item.slice(0, 3).join(' | ')}`;
-      } else {
-        id = idx + 1;
-        title = String(item);
+        rawText = String(item[1] || item[0] || '').trim();
+        batch = item[2] ? String(item[2]).trim() : '';
+        rowId = item[0];
       }
 
-      // Отсекаем только явную шапку
-      if (!title.includes('ИТОГО') && !title.includes('Наименование')) {
-        buttons.push([Markup.button.callback(`#${id} ${title}`.trim(), `sell_${id}`)]);
+      // Отсекаем шапку и пустые строки
+      if (!rawText || rawText.includes('ИТОГО') || rawText.includes('Наименование')) {
+        return;
       }
+
+      // Если в начале текста стоит число (например "2 Майка under arm")
+      const match = rawText.match(/^(\d+)\s+(.+)$/);
+      let displayId = rowId;
+      let displayName = rawText;
+
+      if (match) {
+        displayId = match[1]; // "2"
+        displayName = match[2]; // "Майка under arm"
+      } else if (!displayId || String(displayId).startsWith('Позиция')) {
+        displayId = idx + 1;
+      }
+
+      const batchPart = batch ? ` (${batch})` : '';
+      const buttonLabel = `#${displayId} ${displayName}${batchPart}`;
+
+      // В callback передаем реальный ID для точной фиксации продажи
+      buttons.push([Markup.button.callback(buttonLabel, `sell_${displayId}`)]);
     });
 
     if (buttons.length === 0) {
-      return ctx.reply('Получены только заголовки или пустые элементы: ' + JSON.stringify(items).slice(0, 200), adminMenu);
+      return ctx.reply('Не удалось распознать позиции.', adminMenu);
     }
 
-    await ctx.reply('Выберите товар для продажи:', Markup.inlineKeyboard(buttons.slice(-20)));
+    // Выводим кнопки (порцией до 25 штук)
+    await ctx.reply('Выберите товар для продажи:', Markup.inlineKeyboard(buttons.slice(-25)));
   });
 
   bot.action(/sell_(\d+)/, async (ctx) => {
