@@ -99,7 +99,7 @@ bot.hears('🚚 Внести СДЭК', async (ctx) => {
   });
 });
 
-// 4. Продажа
+// 4. Продажа с фильтром пустых позиций
 bot.hears('💰 Зафиксировать продажу', async (ctx) => {
   await ctx.reply('⏳ Загружаю актуальные товары на продажу...');
   const res = await sendToGAS({ action: 'search_products' });
@@ -108,13 +108,21 @@ bot.hears('💰 Зафиксировать продажу', async (ctx) => {
     return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Не удалось получить список'}`, adminMenu);
   }
 
-  if (!res.items || res.items.length === 0) {
-    return ctx.reply('Нет активных товаров для продажи (товары "себе" скрыты).', adminMenu);
+  // Фильтруем пустые и битые записи (где нет названия или ID равен 0/пусто)
+  const validItems = (res.items || []).filter(item => {
+    const hasName = item.name && String(item.name).trim() !== '' && String(item.name) !== '0';
+    const hasId = item.id !== undefined && item.id !== null && String(item.id).trim() !== '';
+    return hasName && hasId;
+  });
+
+  if (validItems.length === 0) {
+    return ctx.reply('Нет активных товаров для продажи (все продано или товары с пометкой "себе").', adminMenu);
   }
 
-  const buttons = res.items.map(item => [
-    Markup.button.callback(`#${item.id} ${item.name} (${item.batch})`, `sell_${item.id}`)
-  ]);
+  const buttons = validItems.map(item => {
+    const title = `#${item.id} ${item.name} ${item.batch ? `(${item.batch})` : ''}`.trim();
+    return [Markup.button.callback(title, `sell_${item.id}`)];
+  });
 
   await ctx.reply('Выберите товар из списка:', Markup.inlineKeyboard(buttons));
 });
