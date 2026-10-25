@@ -238,3 +238,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+document.addEventListener('DOMContentLoaded', () => {
+    // Находим карточки и блоки для плавного появления
+    const animElements = document.querySelectorAll('.card, .price-card, .quote-card, .project-mini-card, .mediation-content-card');
+    
+    animElements.forEach((el, index) => {
+        el.classList.add('scroll-animate');
+        el.style.transitionDelay = `${(index % 3) * 0.1}s`;
+    });
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { rootMargin: '0px 0px -40px 0px', threshold: 0.1 });
+
+    animElements.forEach(el => observer.observe(el));
+});
+
