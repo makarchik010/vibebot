@@ -778,3 +778,35 @@ a {
         justify-content: center;
     }
 }
+/* Отступ первого экрана от шапки, чтобы не срезало слово Психолог */
+.hero {
+    margin-top: 90px !important;
+}
+
+/* Ограничиваем наезд текста на фото */
+.hero-text {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 25px !important;
+}
+
+.hero-image {
+    position: relative;
+    z-index: 1;
+}
+
+/* Исправление слипания текста в меню */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-list {
+    display: flex;
+    gap: 20px !important;
+}
+
+.logo {
+    margin-right: 25px !important;
+}
