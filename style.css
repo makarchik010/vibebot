@@ -744,3 +744,37 @@ a {
         text-align: center;
     }
 }
+/* Отлепляем логотип от меню в шапке */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+}
+.logo {
+    margin-right: auto;
+}
+
+/* Опускаем первый блок из-под шапки */
+.hero {
+    padding-top: 140px !important;
+}
+
+/* Разводим текст и фото на ноутах, чтобы они не наезжали друг на друга */
+@media (max-width: 1200px) {
+    .hero-container {
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+    }
+    .hero-text {
+        order: 1; /* Текст строго сверху */
+        margin-bottom: 30px;
+    }
+    .hero-image {
+        order: 2; /* Фото строго под текстом */
+    }
+    .hero-credo, .hero-buttons {
+        justify-content: center;
+    }
+}
