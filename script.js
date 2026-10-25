@@ -1,9 +1,10 @@
-// Подключение к твоему Google Apps Script веб-приложению
+// Подключение к Google Apps Script веб-приложению
 const API_URL = "https://script.google.com/macros/s/AKfycbzQI7L2Adv8O00hiFRNWKFySy6S67-5DknOH986T8g0hlRAhXE_TtJwQO2dc3H8F5e_0Q/exec";
 
 document.addEventListener('DOMContentLoaded', () => {
+
     // -------------------------------------------------------------
-    // ОЧИСТКА ОТ ПАРАЗИТНЫХ СНОСОК
+    // АБСОЛЮТНАЯ ЗАЧИСТКА ПАРАЗИТНЫХ СНОСОК
     // -------------------------------------------------------------
     function cleanCitations() {
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
@@ -18,26 +19,88 @@ document.addEventListener('DOMContentLoaded', () => {
     cleanCitations();
 
     // -------------------------------------------------------------
-    // ПЛАВНАЯ НАВИГАЦИЯ ПО ЯКОРЯМ
+    // 1. ПЛАВНЫЕ АНИМАЦИИ ПРИ СКРОЛЛЕ (INTERSECTION OBSERVER)
     // -------------------------------------------------------------
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
-
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                e.preventDefault();
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
+    const revealElements = document.querySelectorAll('.scroll-reveal');
+    
+    revealElements.forEach((el, index) => {
+        // Каскадная микро-задержка для карточек в сетках
+        const delay = (index % 3) * 0.1;
+        el.style.transitionDelay = `${delay}s`;
     });
 
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('revealed');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.12,
+        rootMargin: '0px 0px -40px 0px'
+    });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
     // -------------------------------------------------------------
-    // МОДАЛЬНОЕ ОКНО КОНТАКТОВ
+    // 2. ДИНАМИЧЕСКИЙ СЧЕТЧИК ЧИСЕЛ (ОПЫТ И ЧАСЫ)
+    // -------------------------------------------------------------
+    const counters = document.querySelectorAll('.counter');
+    let countersStarted = false;
+
+    const startCounters = () => {
+        counters.forEach(counter => {
+            const target = +counter.getAttribute('data-target');
+            const duration = 1600;
+            const step = target / (duration / 25);
+            let current = 0;
+
+            const update = () => {
+                current += step;
+                if (current < target) {
+                    counter.textContent = Math.ceil(current);
+                    setTimeout(update, 25);
+                } else {
+                    counter.textContent = target;
+                }
+            };
+            update();
+        });
+    };
+
+    const statsBlock = document.querySelector('.stats-section');
+    if (statsBlock) {
+        const counterObserver = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && !countersStarted) {
+                countersStarted = true;
+                startCounters();
+            }
+        }, { threshold: 0.3 });
+        counterObserver.observe(statsBlock);
+    }
+
+    // -------------------------------------------------------------
+    // 3. ПЛАВАЮЩИЙ ВИДЖЕТ СВЯЗИ (FAB-КНОПКА ВНИЗУ ЭКРАНА)
+    // -------------------------------------------------------------
+    const fabWidget = document.getElementById('fab-widget');
+    const fabBtn = document.getElementById('fab-main-btn');
+
+    if (fabBtn && fabWidget) {
+        fabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fabWidget.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!fabWidget.contains(e.target)) {
+                fabWidget.classList.remove('open');
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // 4. МОДАЛЬНОЕ ОКНО КОНТАКТОВ
     // -------------------------------------------------------------
     const contactModal = document.getElementById('contact-modal');
     const contactCloseBtn = document.getElementById('modal-close');
@@ -65,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------
-    // МОБИЛЬНОЕ МЕНЮ
+    // 5. МОБИЛЬНОЕ МЕНЮ ШАПКИ
     // -------------------------------------------------------------
     const mobileBtn = document.getElementById('mobile-menu-btn');
     const nav = document.querySelector('.nav');
@@ -82,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nav.style.width = '100%';
                 nav.style.backgroundColor = '#ffffff';
                 nav.style.padding = '20px';
-                nav.style.boxShadow = '0 8px 15px rgba(0,0,0,0.08)';
+                nav.style.boxShadow = '0 10px 20px rgba(0,0,0,0.08)';
 
                 const ul = nav.querySelector('ul');
                 if (ul) {
@@ -94,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------
-    // СИНХРОНИЗАЦИЯ С GOOGLE ТАБЛИЦЕЙ (ДАННЫЕ ИЗ БОТА)
+    // 6. СИНХРОНИЗАЦИЯ С GOOGLE ТАБЛИЦЕЙ (ДАННЫЕ ИЗ БОТА)
     // -------------------------------------------------------------
     if (API_URL && API_URL.startsWith('http')) {
         fetch(API_URL)
@@ -102,25 +165,23 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 if (!data) return;
 
-                // 1. Применение цветов и цен
+                // Цвета и цены
                 if (data.config) {
                     const root = document.documentElement;
                     if (data.config.theme_color) root.style.setProperty('--primary', data.config.theme_color);
                     if (data.config.theme_secondary) root.style.setProperty('--secondary', data.config.theme_secondary);
 
-                    // Онлайн цены
                     const pOnlineSingle = document.getElementById('price-online-single');
                     const pOnlinePack = document.getElementById('price-online-pack');
                     if (pOnlineSingle && data.config.price_online_single) pOnlineSingle.textContent = data.config.price_online_single;
                     if (pOnlinePack && data.config.price_online_pack) pOnlinePack.textContent = data.config.price_online_pack;
 
-                    // Офлайн цены
                     const pOfflineSingle = document.getElementById('price-offline-single');
                     const pOfflinePack = document.getElementById('price-offline-pack');
                     if (pOfflineSingle && data.config.price_offline_single) pOfflineSingle.textContent = data.config.price_offline_single;
                     if (pOfflinePack && data.config.price_offline_pack) pOfflinePack.textContent = data.config.price_offline_pack;
 
-                    // Всплывающее спецпредложение (баннер)
+                    // Баннер акции
                     if (data.config.promo_active === 'true' || data.config.promo_active === true) {
                         const promoBanner = document.getElementById('promo-popup');
                         const promoTitle = document.getElementById('promo-title');
@@ -137,14 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                // 2. Подгрузка статей мамы
+                // Мысли и статьи
                 if (data.articles && data.articles.length > 0) {
                     const articlesContainer = document.getElementById('articles-container');
                     if (articlesContainer) {
                         articlesContainer.innerHTML = '';
                         data.articles.forEach(item => {
                             const card = document.createElement('div');
-                            card.className = 'quote-card';
+                            card.className = 'quote-card scroll-reveal revealed';
                             card.innerHTML = `
                                 <div class="quote-icon">“</div>
                                 <div class="quote-body">
