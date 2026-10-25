@@ -1,9 +1,9 @@
 /* =========================================
-   БАЗОВЫЕ НАСТРОЙКИ И ЦВЕТА
+   ПЕРЕМЕННЫЕ И БАЗОВЫЕ НАСТРОЙКИ
    ========================================= */
 :root {
-    --primary: #4C6E5C;       /* Базовый шалфей */
-    --secondary: #8B6E59;     /* Теплый акцент */
+    --primary: #4C6E5C;
+    --secondary: #8B6E59;
     --dark: #2C3531;
     --text: #454d4e;
     --bg-light: #F9F8F6;
@@ -56,9 +56,9 @@ a {
     top: 0;
     left: 0;
     width: 100%;
-    height: 80px;
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
+    height: 75px;
+    background-color: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     z-index: 1000;
 }
@@ -68,7 +68,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 30px;
 }
 
 .logo {
@@ -77,18 +77,13 @@ a {
     font-weight: 700;
     color: var(--dark);
     white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.nav {
-    display: flex;
-    align-items: center;
+    margin-right: auto;
 }
 
 .nav-list {
     display: flex;
     list-style: none;
-    gap: 24px;
+    gap: 20px;
     align-items: center;
 }
 
@@ -122,10 +117,10 @@ a {
    ========================================= */
 .btn {
     display: inline-block;
-    padding: 14px 28px;
+    padding: 13px 26px;
     font-size: 0.95rem;
     font-weight: 600;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     text-align: center;
     transition: all 0.25s ease;
@@ -161,13 +156,13 @@ a {
 }
 
 /* =========================================
-   ПЕРВЫЙ ЭКРАН (HERO) — ИСПРАВЛЕННЫЙ
+   ГЛАВНЫЙ ЭКРАН (HERO)
    ========================================= */
 .hero {
-    padding-top: 130px; /* Запас сверху, чтобы текст не лез под шапку */
-    padding-bottom: 60px;
+    margin-top: 75px;
+    padding: 60px 0 70px;
     background: linear-gradient(180deg, #F9F8F6 0%, #FFFFFF 100%);
-    min-height: calc(100vh - 80px);
+    min-height: calc(100vh - 75px);
     display: flex;
     align-items: center;
 }
@@ -176,21 +171,20 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 50px;
+    gap: 40px;
 }
 
 .hero-text {
     flex: 1 1 55%;
-    max-width: 620px;
-    text-align: left;
+    max-width: 600px;
 }
 
 .hero-title {
     font-family: var(--font-heading);
-    font-size: clamp(2.3rem, 3.8vw, 3.4rem);
+    font-size: clamp(2.2rem, 3.8vw, 3.3rem);
     line-height: 1.15;
     color: var(--dark);
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .hero-title span {
@@ -198,20 +192,20 @@ a {
 }
 
 .hero-desc {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     color: #555e5f;
     line-height: 1.6;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .hero-credo {
     font-family: var(--font-hand);
-    font-size: 1.5rem;
+    font-size: 1.55rem;
     font-style: italic;
     color: var(--primary);
     display: flex;
     gap: 16px;
-    margin-bottom: 34px;
+    margin-bottom: 30px;
 }
 
 .hero-buttons {
@@ -222,22 +216,21 @@ a {
 .hero-image {
     flex: 1 1 45%;
     max-width: 480px;
-    position: relative;
 }
 
 .hero-image img {
     width: 100%;
-    max-height: 600px;
+    max-height: 560px;
     object-fit: cover;
     border-radius: 16px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
 }
 
 /* =========================================
-   СЕКЦИИ И СЕТКИ КАРТОЧЕК
+   СЕКЦИИ И КАРТОЧКИ
    ========================================= */
 .section {
-    padding: 90px 0;
+    padding: 85px 0;
 }
 
 .bg-light {
@@ -245,7 +238,7 @@ a {
 }
 
 .section-header {
-    margin-bottom: 50px;
+    margin-bottom: 45px;
 }
 
 .section-header.center {
@@ -254,13 +247,13 @@ a {
 
 .section-header h2 {
     font-family: var(--font-heading);
-    font-size: 2.3rem;
+    font-size: 2.2rem;
     color: var(--dark);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .section-header p {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: #666;
 }
 
@@ -273,14 +266,14 @@ a {
 .grid-3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 25px;
+    gap: 24px;
 }
 
 .align-center {
     align-items: center;
 }
 
-/* Блок «Обо мне» */
+/* Обо мне */
 .about-gallery {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -291,24 +284,24 @@ a {
     width: 100%;
     height: 380px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 10px;
 }
 
 .about-text h2 {
     font-family: var(--font-heading);
-    font-size: 2.2rem;
-    margin-bottom: 18px;
+    font-size: 2.1rem;
+    margin-bottom: 16px;
     color: var(--dark);
 }
 
 .about-text p {
-    margin-bottom: 16px;
+    margin-bottom: 15px;
     font-size: 1.05rem;
 }
 
 .about-text h3 {
-    margin: 25px 0 15px;
-    font-size: 1.25rem;
+    margin: 25px 0 14px;
+    font-size: 1.2rem;
     color: var(--dark);
 }
 
@@ -318,8 +311,8 @@ a {
 
 .education-list li {
     position: relative;
-    padding-left: 20px;
-    margin-bottom: 10px;
+    padding-left: 18px;
+    margin-bottom: 8px;
     font-size: 0.95rem;
 }
 
@@ -329,13 +322,12 @@ a {
     position: absolute;
     left: 0;
     font-size: 1.2rem;
-    line-height: 1;
 }
 
-/* Карточки психологических запросов */
+/* Карточки направлений */
 .card {
     background-color: var(--white);
-    padding: 30px;
+    padding: 28px;
     border-radius: 12px;
     border: 1px solid var(--border);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -343,49 +335,49 @@ a {
 
 .card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
 }
 
 .card h3 {
-    font-size: 1.25rem;
-    margin-bottom: 12px;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
     color: var(--dark);
 }
 
 .restriction-note {
     font-size: 0.9rem;
     color: #777;
-    margin-top: 35px;
+    margin-top: 30px;
 }
 
 .center {
     text-align: center;
 }
 
-/* Блок «Медиация» */
+/* Медиация */
 .mediation-content-card {
     background-color: #F1F4F2;
-    padding: 40px;
-    border-radius: 14px;
-    max-width: 800px;
+    padding: 38px;
+    border-radius: 12px;
+    max-width: 820px;
     margin: 0 auto;
     text-align: center;
     border-left: 4px solid var(--primary);
 }
 
 .mediation-tags {
-    margin-top: 15px;
+    margin-top: 14px;
     font-weight: 600;
     color: var(--primary);
 }
 
-/* Проекты и кейсы */
+/* Проекты */
 .business-subblock {
     margin-top: 40px;
 }
 
 .subblock-title {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
     margin-bottom: 8px;
     text-align: center;
     color: var(--dark);
@@ -394,17 +386,23 @@ a {
 .subblock-desc {
     text-align: center;
     color: #666;
-    margin-bottom: 25px;
+    margin-bottom: 24px;
 }
 
 .project-mini-card {
     background: var(--white);
     padding: 26px;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.project-mini-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 .project-tag {
@@ -429,7 +427,7 @@ a {
 .publication-card {
     background: var(--white);
     padding: 24px;
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid var(--border);
 }
 
@@ -438,7 +436,7 @@ a {
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 /* Прайс-лист */
@@ -452,28 +450,28 @@ a {
     background: var(--white);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 26px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
 .price-header h3 {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     margin-bottom: 4px;
 }
 
 .price-header p {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: #777;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .price-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 12px 0;
+    padding: 10px 0;
     border-top: 1px dashed var(--border);
 }
 
@@ -483,17 +481,17 @@ a {
     color: var(--primary);
 }
 
-/* Цитаты и статьи */
+/* Цитаты */
 .articles-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 28px;
 }
 
 .quote-card {
     background: var(--white);
     border: 1px solid var(--border);
-    padding: 30px;
+    padding: 28px;
     border-radius: 12px;
     display: flex;
     gap: 16px;
@@ -510,7 +508,7 @@ a {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 18px;
+    margin-top: 16px;
 }
 
 .quote-avatar {
@@ -535,7 +533,7 @@ a {
 .footer {
     background: #232B28;
     color: #B5BFBA;
-    padding: 40px 0;
+    padding: 38px 0;
     font-size: 0.9rem;
 }
 
@@ -550,10 +548,43 @@ a {
     text-decoration: underline;
 }
 
-/* Всплывающее окно промо */
-.promo-modal {
+/* =========================================
+   ПЛАВАЮЩАЯ КНОПКА СВЯЗИ (КАК У АКУБОВОЙ)
+   ========================================= */
+.floating-contact-btn {
     position: fixed;
     bottom: 25px;
+    right: 25px;
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary);
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(76, 110, 92, 0.35);
+    z-index: 998;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    transition: transform 0.25s ease, background-color 0.25s ease;
+}
+
+.floating-contact-btn:hover {
+    transform: scale(1.08);
+    background-color: #3b5648;
+}
+
+.floating-contact-btn svg {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
+}
+
+/* Модальные окна */
+.promo-modal {
+    position: fixed;
+    bottom: 95px;
     right: 25px;
     z-index: 990;
     display: none;
@@ -594,7 +625,6 @@ a {
     margin-bottom: 8px;
 }
 
-/* Модальное окно контактов */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -669,11 +699,13 @@ a {
 .btn-vk { background: #0077FF; }
 .btn-max { background: #4C6E5C; }
 
-/* Плавные анимации появления при скролле */
+/* =========================================
+   АНИМАЦИИ ВЫКАТЫВАНИЯ ПРИ СКРОЛЛЕ
+   ========================================= */
 .scroll-animate {
     opacity: 0;
     transform: translateY(35px);
-    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity, transform;
 }
 
@@ -686,7 +718,7 @@ a {
 .mt-4 { margin-top: 40px; }
 
 /* =========================================
-   АДАПТИВ ПОД ПЛАНШЕТЫ И ТЕЛЕФОНЫ
+   АДАПТИВ ПОД НОУТБУКИ И СМАРТФОНЫ
    ========================================= */
 @media (max-width: 1024px) {
     .pricing-grid {
@@ -694,6 +726,9 @@ a {
     }
     .grid-3 {
         grid-template-columns: repeat(2, 1fr);
+    }
+    .hero-container {
+        gap: 30px;
     }
 }
 
@@ -709,24 +744,20 @@ a {
     }
     
     .hero {
-        padding-top: 100px;
-        text-align: center;
+        padding: 40px 0 50px;
     }
     .hero-container {
         flex-direction: column;
-        gap: 30px;
+        text-align: center;
     }
     .hero-text {
         text-align: center;
     }
-    .hero-credo {
-        justify-content: center;
-    }
-    .hero-buttons {
+    .hero-credo, .hero-buttons {
         justify-content: center;
     }
     .hero-image {
-        max-width: 340px;
+        max-width: 320px;
     }
     
     .grid-2, .grid-3, .pricing-grid, .articles-grid {
@@ -743,20 +774,10 @@ a {
         gap: 12px;
         text-align: center;
     }
+    .floating-contact-btn {
+        bottom: 18px;
+        right: 18px;
+        width: 54px;
+        height: 54px;
+    }
 }
-/* Отлепляем логотип от меню в шапке */
-.header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 30px;
-}
-.logo {
-    margin-right: auto;
-}
-
-/* Опускаем первый блок из-под шапки */
-.hero {
-    padding-top: 140px !important;
-}
-
