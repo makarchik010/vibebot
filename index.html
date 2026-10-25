@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Montserrat:wght@300;400;500;600&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Montserrat:wght@300;400;500;600;700&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -49,7 +49,7 @@
     <!-- Главный экран -->
     <section class="hero">
         <div class="container hero-container">
-            <div class="hero-text">
+            <div class="hero-text scroll-reveal">
                 <h1 class="hero-title">
                     <span>Психолог</span>
                     <span>Медиатор</span>
@@ -67,8 +67,32 @@
                     <button type="button" class="btn btn-primary open-modal-btn">Записаться на консультацию</button>
                 </div>
             </div>
-            <div class="hero-image">
+            <div class="hero-image scroll-reveal">
                 <img src="hero.jpg" alt="Светлана Соковикова">
+            </div>
+        </div>
+    </section>
+
+    <!-- БЛОК СТАТИСТИКИ И ОПЫТА (Стиль Акубовой) -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card scroll-reveal">
+                    <div class="stat-number"><span class="counter" data-target="400">0</span>+</div>
+                    <div class="stat-label">часов тренингов и программ</div>
+                </div>
+                <div class="stat-card scroll-reveal">
+                    <div class="stat-number"><span class="counter" data-target="10">0</span>+</div>
+                    <div class="stat-label">лет практической работы</div>
+                </div>
+                <div class="stat-card scroll-reveal">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">конфиденциальность и этика</div>
+                </div>
+                <div class="stat-card scroll-reveal">
+                    <div class="stat-number">УдГУ</div>
+                    <div class="stat-label">диплом магистра с отличием</div>
+                </div>
             </div>
         </div>
     </section>
@@ -77,12 +101,12 @@
     <section id="about" class="section">
         <div class="container">
             <div class="grid-2 align-center">
-                <div class="about-gallery">
+                <div class="about-gallery scroll-reveal">
                     <img src="about (7).jpg" alt="Светлана Соковикова фото 1" class="gallery-item">
                     <img src="about (6).jpg" alt="Светлана Соковикова фото 2" class="gallery-item">
                     <img src="about (8).jpg" alt="Светлана Соковикова фото 3" class="gallery-item">
                 </div>
-                <div class="about-text">
+                <div class="about-text scroll-reveal">
                     <h2>Обо мне и моем подходе</h2>
                     <p>Мой основной метод: <strong>когнитивно-поведенческая терапия (КПТ)</strong>.</p>
                     <p>Я также применяю в подходящих случаях техники гештальт-терапии, гуманистического направления и иных видов.</p>
@@ -102,52 +126,70 @@
         </div>
     </section>
 
-    <!-- Блок: Психологическое консультирование -->
+    <!-- Блок: Психологическое консультирование с интерактивными тултипами -->
     <section id="psychology" class="section bg-light">
         <div class="container">
-            <div class="section-header center">
+            <div class="section-header center scroll-reveal">
                 <h2>Психологическое консультирование</h2>
                 <p>Я работаю с девушками и женщинами старше 18 лет</p>
             </div>
             
             <div class="grid-3">
-                <div class="card">
-                    <h3>Сложные эмоции</h3>
+                <div class="card scroll-reveal">
+                    <div class="card-head-row">
+                        <h3>Сложные эмоции</h3>
+                        <div class="tooltip-trigger" tabindex="0" data-tip="Разбираем первопричину эмоциональных качелей и формируем навыки экспресс-саморегуляции">ℹ</div>
+                    </div>
                     <p>Тревога, обида, раздражение, чувство вины. Помощь, если эмоции мешают отношениям и повседневной жизни.</p>
                 </div>
-                <div class="card">
-                    <h3>Самооценка</h3>
+                <div class="card scroll-reveal">
+                    <div class="card-head-row">
+                        <h3>Самооценка</h3>
+                        <div class="tooltip-trigger" tabindex="0" data-tip="Преодоление синдрома самозванца, поиск внутренней опоры и уверенности в себе">ℹ</div>
+                    </div>
                     <p>Неуверенность, сомнения в собственных решениях, трудности с выражением своих желаний и отстаиванием позиции.</p>
                 </div>
-                <div class="card">
-                    <h3>Личные границы</h3>
+                <div class="card scroll-reveal">
+                    <div class="card-head-row">
+                        <h3>Личные границы</h3>
+                        <div class="tooltip-trigger" tabindex="0" data-tip="Учимся говорить «нет» без чувства вины и экологично защищать свое пространство">ℹ</div>
+                    </div>
                     <p>Сложности с отказом, страх обидеть другого человека, чувство вины за собственные потребности.</p>
                 </div>
-                <div class="card">
-                    <h3>Отношения и конфликты</h3>
+                <div class="card scroll-reveal">
+                    <div class="card-head-row">
+                        <h3>Отношения и конфликты</h3>
+                        <div class="tooltip-trigger" tabindex="0" data-tip="Выход из эмоциональной зависимости и перевод претензий в открытый диалог">ℹ</div>
+                    </div>
                     <p>Повторяющиеся ссоры с близкими, напряжённое общение, взаимные обиды, трудности с поиском решений.</p>
                 </div>
-                <div class="card">
-                    <h3>Повторяющиеся сценарии</h3>
+                <div class="card scroll-reveal">
+                    <div class="card-head-row">
+                        <h3>Повторяющиеся сценарии</h3>
+                        <div class="tooltip-trigger" tabindex="0" data-tip="Осознание и трансформация привычных деструктивных реакций на стресс">ℹ</div>
+                    </div>
                     <p>Ситуации, в которых вы снова сталкиваетесь с похожими проблемами в отношениях или реагируете привычным образом.</p>
                 </div>
-                <div class="card">
-                    <h3>Сложные ситуации</h3>
+                <div class="card scroll-reveal">
+                    <div class="card-head-row">
+                        <h3>Сложные ситуации</h3>
+                        <div class="tooltip-trigger" tabindex="0" data-tip="Психологическое сопровождение в кризисные моменты и периоды перемен">ℹ</div>
+                    </div>
                     <p>Периоды неопределённости, непростые решения, перемены, когда трудно понять, как действовать дальше.</p>
                 </div>
             </div>
-            <p class="restriction-note center">* Обратите внимание: я не работаю с мужчинами, детьми, фобиями и подтверждёнными психиатрическими диагнозами</p>
+            <p class="restriction-note center scroll-reveal">* Обратите внимание: я не работаю с мужчинами, детьми, фобиями и подтверждёнными психиатрическими диагнозами</p>
         </div>
     </section>
 
     <!-- Блок: Медиация -->
     <section id="mediation" class="section">
         <div class="container text-center-block">
-            <div class="section-header center">
+            <div class="section-header center scroll-reveal">
                 <h2>Медиация: когда договориться сложно</h2>
                 <p class="max-w-text">Когда конфликт затягивается, участникам бывает трудно услышать друг друга, отделить эмоции от сути разногласий и найти решение, которое учитывает интересы обеих сторон.</p>
             </div>
-            <div class="mediation-content-card">
+            <div class="mediation-content-card scroll-reveal">
                 <p><strong>Медиация</strong> — это структурированный процесс урегулирования конфликта с участием нейтрального посредника.</p>
                 <p>Моя задача как медиатора: организовать конструктивный диалог, помочь сторонам прояснить позиции и интересы, обсудить варианты и прийти к взаимоприемлемым договорённостям.</p>
                 <p class="mediation-tags">Семейные · Межличностные · Рабочие · Организационные конфликты</p>
@@ -161,47 +203,46 @@
     <!-- Блок: Психология и тренинги для бизнеса -->
     <section id="business" class="section bg-light">
         <div class="container text-center-block">
-            <div class="section-header center">
+            <div class="section-header center scroll-reveal">
                 <h2>Психология и тренинги для бизнеса</h2>
                 <p class="max-w-text">Более 400 часов тренингов и программ для предприятий: Ижевский радиозавод, Концерн «Калашников», ПАО «Удмуртнефть», «Фабрика Мирлачева», Корпорация развития УР</p>
             </div>
 
-            <!-- Реализованные проекты -->
             <div class="business-subblock">
-                <h3 class="subblock-title">Реализованные проекты</h3>
-                <p class="subblock-desc">Нажмите на тему проекта, чтобы изучить подробные результаты и регламенты</p>
+                <h3 class="subblock-title scroll-reveal">Реализованные проекты</h3>
+                <p class="subblock-desc scroll-reveal">Нажмите на тему проекта, чтобы изучить подробные результаты и регламенты</p>
                 <div class="grid-3 projects-preview-grid">
-                    <a href="projects.html#project-1" class="project-mini-card">
+                    <a href="projects.html#project-1" class="project-mini-card scroll-reveal">
                         <span class="project-tag">Продажи и сервис</span>
                         <h4>Стандарты обслуживания и продажи мебели</h4>
                         <p>«Фабрика Мирлачева»: рост конверсии в покупку на 30% и регламент коммуникаций</p>
                         <span class="card-more-link">Смотреть проект →</span>
                     </a>
-                    <a href="projects.html#project-2" class="project-mini-card">
+                    <a href="projects.html#project-2" class="project-mini-card scroll-reveal">
                         <span class="project-tag">Медиация в коллективе</span>
                         <h4>Конфликт поколений и фасилитация</h4>
                         <p>Муниципальное учреждение культуры: снижение напряжения и «Партитура взаимодействия»</p>
                         <span class="card-more-link">Смотреть проект →</span>
                     </a>
-                    <a href="projects.html#project-3" class="project-mini-card">
+                    <a href="projects.html#project-3" class="project-mini-card scroll-reveal">
                         <span class="project-tag">Сервисные продажи</span>
                         <h4>Вовлечение персонала в допродажи</h4>
                         <p>Сеть спа-центров «7 Sense»: преодоление барьера навязывания и рост повторных записей</p>
                         <span class="card-more-link">Смотреть проект →</span>
                     </a>
-                    <a href="projects.html#project-4" class="project-mini-card">
+                    <a href="projects.html#project-4" class="project-mini-card scroll-reveal">
                         <span class="project-tag">Ораторское мастерство</span>
                         <h4>Убеждающие публичные выступления</h4>
                         <p>АО «Ижевский радиозавод»: снятие страха сцены и структура докладов для специалистов</p>
                         <span class="card-more-link">Смотреть проект →</span>
                     </a>
-                    <a href="projects.html#project-5" class="project-mini-card">
+                    <a href="projects.html#project-5" class="project-mini-card scroll-reveal">
                         <span class="project-tag">Конфликт-менеджмент</span>
                         <h4>Управление стрессом для руководителей</h4>
                         <p>АО «Ижевский радиозавод»: трансактный анализ и саморегуляция в кризисных беседах</p>
                         <span class="card-more-link">Смотреть проект →</span>
                     </a>
-                    <div class="project-mini-card project-action-card">
+                    <div class="project-mini-card project-action-card scroll-reveal">
                         <h4>Нужна программа под вашу команду?</h4>
                         <p>Разрабатываю прикладные тренинги под специфику и цели вашей компании</p>
                         <button type="button" class="btn btn-primary open-modal-btn">Обсудить формат</button>
@@ -209,28 +250,26 @@
                 </div>
             </div>
 
-            <!-- Участие в проектах: переход на events.html -->
             <div class="business-subblock mt-4">
-                <h3 class="subblock-title">Участие в проектах организаций Удмуртии</h3>
-                <p class="subblock-desc">Форумы, обучающие семинары и программы развития управленческих кадров предприятий республики</p>
-                <div class="center mt-2">
+                <h3 class="subblock-title scroll-reveal">Участие в проектах организаций Удмуртии</h3>
+                <p class="subblock-desc scroll-reveal">Форумы, обучающие семинары и программы развития управленческих кадров предприятий республики</p>
+                <div class="center mt-2 scroll-reveal">
                     <a href="events.html" class="btn btn-outline" style="padding: 14px 30px; font-size: 1rem;">
                         Смотреть все проекты и участие (14 мероприятий) →
                     </a>
                 </div>
             </div>
 
-            <!-- Публикации в прессе -->
             <div class="business-subblock mt-4">
-                <h3 class="subblock-title">Публикации в официальных изданиях</h3>
+                <h3 class="subblock-title scroll-reveal">Публикации в официальных изданиях</h3>
                 <div class="grid-2 publications-grid">
-                    <a href="https://izvestiaur.ru/rubrics/-43-5926-18-iyunya/662644-privychki-upravlentsev/?sphrase_id=622953" target="_blank" rel="noopener" class="publication-card">
+                    <a href="https://izvestiaur.ru/rubrics/-43-5926-18-iyunya/662644-privychki-upravlentsev/?sphrase_id=622953" target="_blank" rel="noopener" class="publication-card scroll-reveal">
                         <div class="pub-badge">Статья в прессе</div>
                         <h4>«Привычки управленцев»</h4>
                         <p class="pub-source">Газета «Известия Удмуртской Республики» №43 от 18 июня 2026 года</p>
                         <span class="pub-link">Читать публикацию на сайте газеты ↗</span>
                     </a>
-                    <a href="https://izvestiaur.ru/rubrics/-67-5944-10-sentyabrya/674985-passazhiry-na-vykhod/?sphrase_id=622954" target="_blank" rel="noopener" class="publication-card">
+                    <a href="https://izvestiaur.ru/rubrics/-67-5944-10-sentyabrya/674985-passazhiry-na-vykhod/?sphrase_id=622954" target="_blank" rel="noopener" class="publication-card scroll-reveal">
                         <div class="pub-badge">Статья в прессе</div>
                         <h4>«Пассажиры — на выход!»</h4>
                         <p class="pub-source">Газета «Известия Удмуртской Республики» №67 от 10 сентября 2026 года</p>
@@ -244,14 +283,13 @@
     <!-- Блок: Услуги и цены -->
     <section id="pricing" class="section">
         <div class="container">
-            <div class="section-header center">
+            <div class="section-header center scroll-reveal">
                 <h2>Услуги и цены</h2>
                 <p>Прозрачные условия индивидуальной и корпоративной работы</p>
             </div>
             
             <div class="pricing-grid">
-                <!-- Онлайн -->
-                <div class="price-card">
+                <div class="price-card scroll-reveal">
                     <div class="price-header">
                         <h3>Онлайн формат</h3>
                         <p>Индивидуальная консультация</p>
@@ -268,8 +306,7 @@
                     </div>
                 </div>
                 
-                <!-- Офлайн -->
-                <div class="price-card">
+                <div class="price-card scroll-reveal">
                     <div class="price-header">
                         <h3>Офлайн формат</h3>
                         <p>Личная встреча в кабинете</p>
@@ -286,8 +323,7 @@
                     </div>
                 </div>
 
-                <!-- Медиация -->
-                <div class="price-card">
+                <div class="price-card scroll-reveal">
                     <div class="price-header">
                         <h3>Услуги по медиации</h3>
                         <p>Разрешение споров и разногласий</p>
@@ -301,8 +337,7 @@
                     </div>
                 </div>
 
-                <!-- Бизнес -->
-                <div class="price-card">
+                <div class="price-card scroll-reveal">
                     <div class="price-header">
                         <h3>Корпоративные программы</h3>
                         <p>Тренинги и поддержка персонала</p>
@@ -317,7 +352,7 @@
                 </div>
             </div>
 
-            <div class="center mt-4">
+            <div class="center mt-4 scroll-reveal">
                 <button type="button" class="btn btn-primary open-modal-btn">Записаться на встречу</button>
             </div>
         </div>
@@ -326,13 +361,13 @@
     <!-- Блок: Мысли и статьи -->
     <section id="articles" class="section bg-light">
         <div class="container">
-            <div class="section-header center">
+            <div class="section-header center scroll-reveal">
                 <h2>Мысли и статьи</h2>
                 <p>Заметки о психологии отношений, личных границах и внутреннем спокойствии</p>
             </div>
 
             <div class="articles-grid" id="articles-container">
-                <div class="quote-card">
+                <div class="quote-card scroll-reveal">
                     <div class="quote-icon">“</div>
                     <div class="quote-body">
                         <p class="quote-text">Личные границы — это не каменная стена вокруг вас, а дверь с ручкой с вашей стороны. Вы сами решаете, кого, когда и на каких условиях впускать в свое пространство.</p>
@@ -346,7 +381,7 @@
                     </div>
                 </div>
 
-                <div class="quote-card">
+                <div class="quote-card scroll-reveal">
                     <div class="quote-icon">“</div>
                     <div class="quote-body">
                         <p class="quote-text">В конфликте мы чаще всего защищаем не факты, а свои невысказанные страхи и уязвимость. Когда стороны начинают говорить о потребностях, а не об обвинениях — находится решение.</p>
@@ -371,7 +406,30 @@
         </div>
     </footer>
 
-    <!-- Всплывающий баннер спецпредложения -->
+    <!-- ПЛАВАЮЩИЙ ВИДЖЕТ СВЯЗИ В СТИЛЕ АКУБОВОЙ -->
+    <div class="fab-widget" id="fab-widget">
+        <div class="fab-menu" id="fab-menu">
+            <a href="https://t.me/SokovikovaSvetlana" target="_blank" rel="noopener" class="fab-action fab-tg" title="Telegram">
+                <span>Telegram</span>
+                <div class="fab-circle-icon">✈</div>
+            </a>
+            <a href="https://wa.me/79225039888" target="_blank" rel="noopener" class="fab-action fab-wa" title="WhatsApp">
+                <span>WhatsApp</span>
+                <div class="fab-circle-icon">💬</div>
+            </a>
+            <a href="tel:+79225039888" class="fab-action fab-tel" title="Позвонить">
+                <span>Позвонить</span>
+                <div class="fab-circle-icon">📞</div>
+            </a>
+        </div>
+        <button type="button" class="fab-btn" id="fab-main-btn" aria-label="Связаться">
+            <div class="fab-pulse"></div>
+            <span class="fab-icon-chat">💬</span>
+            <span class="fab-icon-close">✕</span>
+        </button>
+    </div>
+
+    <!-- Всплывающий баннер спецпредложения (управляется ботом) -->
     <div id="promo-popup" class="promo-modal">
         <div class="promo-content">
             <button class="promo-close" id="promo-close">&times;</button>
