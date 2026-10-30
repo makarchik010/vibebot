@@ -35,6 +35,7 @@ async function startBot() {
     ['💰 Зафиксировать продажу', '❌ Отмена']
   ]).resize();
 
+  // Безопасный запрос к Google Apps Script с обработкой HTML-ошибок
   async function sendToGAS(payload) {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL, {
@@ -43,12 +44,20 @@ async function startBot() {
         body: JSON.stringify(payload),
         redirect: 'follow'
       });
-      return await res.json();
+      const rawText = await res.text();
+      try {
+        return JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error('GAS вернул не JSON:', rawText.slice(0, 150));
+        return { status: 'error', error: 'Скрипт таблицы вернул ошибку или HTML-страницу.' };
+      }
     } catch (err) {
+      console.error('Сетевой сбой при обращении к GAS:', err);
       return { status: 'error', error: err.message };
     }
   }
 
+  // Проверка авторизации
   bot.use(async (ctx, next) => {
     const uid = ctx.from?.id;
     if (!uid) return;
@@ -63,15 +72,16 @@ async function startBot() {
   });
 
   bot.start(async (ctx) => {
-    userSessions.delete(ctx.from.id);
+    userSessions.delete(ctx.from?.id);
     await ctx.reply('📊 Система учета готова к работе.', adminMenu);
   });
 
   bot.hears('❌ Отмена', async (ctx) => {
-    userSessions.delete(ctx.from.id);
+    userSessions.delete(ctx.from?.id);
     await ctx.reply('Действие отменено.', adminMenu);
   });
 
+  // Добавление товара
   bot.hears('➕ Добавить товар', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'PROD_NAME' });
     await ctx.reply('📝 *Шаг 1 из 5:*\nНаименование товара (например: `Nike Blazer 77`):', {
@@ -80,14 +90,20 @@ async function startBot() {
     });
   });
 
+  // Карго
   bot.hears('📦 Внести Карго', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'CARGO_BATCH' });
-    await ctx.reply('📦 Номер объединения для Карго:');
+    await ctx.reply('📦 Номер объединения для Карго:', {
+      ...Markup.keyboard([['❌ Отмена']]).resize()
+    });
   });
 
+  // СДЭК
   bot.hears('🚚 Внести СДЭК', async (ctx) => {
     userSessions.set(ctx.from.id, { step: 'CDEK_BATCH' });
-    await ctx.reply('🚚 Номер объединения для СДЭК:');
+    await ctx.reply('🚚 Номер объединения для СДЭК:', {
+      ...Markup.keyboard([['❌ Отмена']]).resize()
+    });
   });
 
   // Товар пришел
@@ -114,16 +130,17 @@ async function startBot() {
     await ctx.reply('Выберите товар, который приехал на склад:', Markup.inlineKeyboard(buttons));
   });
 
+  // Клик: Товар приехал
   bot.action(/arrive_(\d+)/, async (ctx) => {
+    await ctx.answerCbQuery('Обновляю статус...').catch(() => {});
     const prodId = ctx.match[1];
-    await ctx.answerCbQuery('Отмечаю...');
-    await ctx.editMessageText('⏳ Обновляю статус в таблице...');
+    await ctx.editMessageText('⏳ Обновляю статус в таблице...').catch(() => {});
 
     const res = await sendToGAS({ action: 'mark_arrived', id: prodId });
     if (res && res.status === 'ok') {
-      await ctx.editMessageText(`✅ Товар "${res.name}" (ID: #${prodId}) переведен в статус "В наличии"!`);
+      await ctx.editMessageText(`✅ Товар "${res.name}" (ID: #${prodId}) переведен в статус "В наличии"!`).catch(() => {});
     } else {
-      await ctx.editMessageText(`⚠️ Ошибка: ${res?.error || 'Сбой'}`);
+      await ctx.editMessageText(`⚠️ Ошибка: ${res?.error || 'Сбой'}`).catch(() => {});
     }
   });
 
@@ -150,17 +167,21 @@ async function startBot() {
     await ctx.reply('Выберите товар для продажи:', Markup.inlineKeyboard(buttons));
   });
 
+  // Клик: Выбор товара для продажи
   bot.action(/sell_(\d+)/, async (ctx) => {
+    await ctx.answerCbQuery().catch(() => {});
     const prodId = ctx.match[1];
     userSessions.set(ctx.from.id, { step: 'SELL_PRICE', prodId });
-    await ctx.answerCbQuery();
     await ctx.reply(`Введите фактическую цену продажи в рублях (₽) для позиции #${prodId}:`, {
       ...Markup.keyboard([['❌ Отмена']]).resize()
     });
   });
 
+  // Пошаговый ввод данных
   bot.on('text', async (ctx, next) => {
-    const uid = ctx.from.id;
+    const uid = ctx.from?.id;
+    if (!uid) return next();
+
     const state = userSessions.get(uid);
     if (!state) return next();
 
@@ -265,8 +286,8 @@ async function startBot() {
     // Продажа
     if (state.step === 'SELL_PRICE') {
       const sellPrice = parseFloat(text.replace(',', '.'));
-      if (isNaN(sellPrice) || sellPrice <= 0) return ctx.reply('Введите корректную сумму:');
-      await ctx.reply('⏳ Обновляю статус...');
+      if (isNaN(sellPrice) || sellPrice <= 0) return ctx.reply('Введите корректную сумму продажи:');
+      await ctx.reply('⏳ Обновляю статус в таблице...');
       const res = await sendToGAS({ action: 'sell_product', id: state.prodId, sellPrice });
       userSessions.delete(uid);
 
