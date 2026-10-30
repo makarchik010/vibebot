@@ -1,215 +1,289 @@
-const { Telegraf, Markup } = require('telegraf');
 const http = require('http');
-const fs = require('fs').promises;
-const fsSync = require('fs');
-const path = require('path');
+const { Telegraf, Markup } = require('telegraf');
 
-const token = process.env.BOT_TOKEN;
-if (!token) {
-  console.error('КРИТИЧЕСКАЯ ОШИБКА: Переменная BOT_TOKEN не найдена!');
-}
+const port = process.env.PORT || 10000;
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Inventory Bot Online');
+});
 
-const bot = new Telegraf(token);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Сервер запущен на порту ${port}`);
+  startBot();
+});
 
-// НАСТРОЙКИ
-const ADMIN_ID = 1681547868; // Твой Telegram ID
-const MANAGER_USERNAME = 'cargo2828';
+process.on('unhandledRejection', (r) => console.error('Rejection:', r));
+process.on('uncaughtException', (e) => console.error('Exception:', e));
 
-// Файлы данных
-const RATES_FILE = path.join(__dirname, 'rates.json');
-const USERS_FILE = path.join(__dirname, 'users.json');
+async function startBot() {
+  const token = process.env.TABLE_BOT_TOKEN;
+  if (!token) {
+    console.error('ОШИБКА: TABLE_BOT_TOKEN не задан!');
+    return;
+  }
 
-// Кэш пользователей в памяти (чтобы не долбить диск синхронно)
-let usersCache = new Set();
+  const bot = new Telegraf(token);
+  const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbzVMFAdOuj63GvM6Xy23WYQutPnrCfsLg_1BaQhjRpSEIYAtpnV66pxTHWJ0vcbWW5y/exec';
+  const BOT_PASSWORD = '2888';
 
-function initStorage() {
-  try {
-    if (fsSync.existsSync(USERS_FILE)) {
-      const data = JSON.parse(fsSync.readFileSync(USERS_FILE, 'utf8'));
-      if (Array.isArray(data)) usersCache = new Set(data);
+  const userSessions = new Map();
+  const authorizedUsers = new Set();
+
+  const adminMenu = Markup.keyboard([
+    ['➕ Добавить товар', '✅ Товар пришел'],
+    ['📦 Внести Карго', '🚚 Внести СДЭК'],
+    ['💰 Зафиксировать продажу', '❌ Отмена']
+  ]).resize();
+
+  async function sendToGAS(payload) {
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        redirect: 'follow'
+      });
+      return await res.json();
+    } catch (err) {
+      return { status: 'error', error: err.message };
     }
-  } catch (e) {
-    console.error('Ошибка загрузки users.json:', e);
   }
-}
-initStorage();
 
-async function saveUser(userId) {
-  if (userId === ADMIN_ID || usersCache.has(userId)) return;
-  usersCache.add(userId);
-  try {
-    await fs.writeFile(USERS_FILE, JSON.stringify([...usersCache], null, 2));
-  } catch (e) {
-    console.error('Ошибка сохранения users.json:', e);
-  }
-}
+  bot.use(async (ctx, next) => {
+    const uid = ctx.from?.id;
+    if (!uid) return;
+    if (authorizedUsers.has(uid)) return next();
 
-// Курс валют
-function loadRate() {
-  try {
-    if (fsSync.existsSync(RATES_FILE)) {
-      const data = JSON.parse(fsSync.readFileSync(RATES_FILE, 'utf8'));
-      if (data && data.baseCnyRate) return data.baseCnyRate;
+    const text = ctx.message?.text?.trim();
+    if (text === BOT_PASSWORD) {
+      authorizedUsers.add(uid);
+      return ctx.reply('🔓 Доступ разрешен. Бот готов к работе.', adminMenu);
     }
-  } catch (e) {
-    console.error('Ошибка чтения rates.json:', e);
-  }
-  return 13.5;
-}
+    return ctx.reply('🔒 Введите пароль доступа:');
+  });
 
-async function saveRate(rate) {
-  try {
-    await fs.writeFile(RATES_FILE, JSON.stringify({ baseCnyRate: rate }, null, 2));
-  } catch (e) {
-    console.error('Ошибка записи rates.json:', e);
-  }
-}
+  bot.start(async (ctx) => {
+    userSessions.delete(ctx.from.id);
+    await ctx.reply('📊 Система учета готова к работе.', adminMenu);
+  });
 
-const CONFIG = {
-  baseCnyRate: loadRate(),
-  clientDeliveryPerKg: 1250,
-  hiddenCompensatedFee: 150
-};
+  bot.hears('❌ Отмена', async (ctx) => {
+    userSessions.delete(ctx.from.id);
+    await ctx.reply('Действие отменено.', adminMenu);
+  });
 
-const userState = new Map();
+  bot.hears('➕ Добавить товар', async (ctx) => {
+    userSessions.set(ctx.from.id, { step: 'PROD_NAME' });
+    await ctx.reply('📝 *Шаг 1 из 5:*\nНаименование товара (например: `Nike Blazer 77`):', {
+      parse_mode: 'Markdown',
+      ...Markup.keyboard([['❌ Отмена']]).resize()
+    });
+  });
 
-// ГЛОБАЛЬНЫЙ ТРЕКЕР
-bot.use(async (ctx, next) => {
-  try {
-    const from = ctx.from;
-    if (from) {
-      saveUser(from.id);
+  bot.hears('📦 Внести Карго', async (ctx) => {
+    userSessions.set(ctx.from.id, { step: 'CARGO_BATCH' });
+    await ctx.reply('📦 Номер объединения для Карго:');
+  });
 
-      if (from.id !== ADMIN_ID) {
-        const userTag = from.username ? `@${from.username}` : 'нет юзернейма';
-        const name = from.first_name || 'Без имени';
+  bot.hears('🚚 Внести СДЭК', async (ctx) => {
+    userSessions.set(ctx.from.id, { step: 'CDEK_BATCH' });
+    await ctx.reply('🚚 Номер объединения для СДЭК:');
+  });
 
-        let actionDesc = '';
-        if (ctx.message && ctx.message.text) {
-          actionDesc = `💬 Сообщение: "${ctx.message.text}"`;
-        } else if (ctx.callbackQuery && ctx.callbackQuery.data) {
-          actionDesc = `🔘 Нажата кнопка: [${ctx.callbackQuery.data}]`;
-        }
+  // Товар пришел
+  bot.hears('✅ Товар пришел', async (ctx) => {
+    await ctx.reply('⏳ Ищу товары в пути...');
+    const res = await sendToGAS({ action: 'search_products' });
 
-        if (actionDesc) {
-          const logMsg =
-            `👤 *АКТИВНОСТЬ В БОТЕ*\n` +
-            `• Пользователь: *${name}* (${userTag})\n` +
-            `• ID: \`${from.id}\`\n` +
-            `• Действие: ${actionDesc}`;
-          ctx.telegram.sendMessage(ADMIN_ID, logMsg, { parse_mode: 'Markdown' }).catch(() => {});
-        }
+    if (!res || res.status !== 'ok') {
+      return ctx.reply(`⚠️ Ошибка от таблицы: ${res?.error || 'Сбой связи'}`, adminMenu);
+    }
+
+    const items = res.items || [];
+    const arrivingItems = items.filter(item => item.status !== 'В наличии');
+
+    if (arrivingItems.length === 0) {
+      return ctx.reply('Нет товаров со статусом "В пути" (либо всё уже пришло/продано).', adminMenu);
+    }
+
+    const buttons = arrivingItems.map(item => {
+      const batchStr = item.batch ? ` (${item.batch})` : '';
+      return [Markup.button.callback(`📦 #${item.id} ${item.name}${batchStr}`, `arrive_${item.id}`)];
+    });
+
+    await ctx.reply('Выберите товар, который приехал на склад:', Markup.inlineKeyboard(buttons));
+  });
+
+  bot.action(/arrive_(\d+)/, async (ctx) => {
+    const prodId = ctx.match[1];
+    await ctx.answerCbQuery('Отмечаю...');
+    await ctx.editMessageText('⏳ Обновляю статус в таблице...');
+
+    const res = await sendToGAS({ action: 'mark_arrived', id: prodId });
+    if (res && res.status === 'ok') {
+      await ctx.editMessageText(`✅ Товар "${res.name}" (ID: #${prodId}) переведен в статус "В наличии"!`);
+    } else {
+      await ctx.editMessageText(`⚠️ Ошибка: ${res?.error || 'Сбой'}`);
+    }
+  });
+
+  // Зафиксировать продажу
+  bot.hears('💰 Зафиксировать продажу', async (ctx) => {
+    await ctx.reply('⏳ Загружаю актуальные товары...');
+    const res = await sendToGAS({ action: 'search_products' });
+
+    if (!res || res.status !== 'ok') {
+      return ctx.reply(`⚠️ Ошибка от таблицы: ${res?.error || 'Сбой связи'}`, adminMenu);
+    }
+
+    const items = res.items || [];
+    if (items.length === 0) {
+      return ctx.reply('Все позиции уже проданы либо лист «Товары» пуст.', adminMenu);
+    }
+
+    const buttons = items.map(item => {
+      const batchStr = item.batch ? ` (${item.batch})` : '';
+      const icon = item.status === 'В наличии' ? '📦' : '🚚';
+      return [Markup.button.callback(`${icon} #${item.id} ${item.name}${batchStr}`, `sell_${item.id}`)];
+    });
+
+    await ctx.reply('Выберите товар для продажи:', Markup.inlineKeyboard(buttons));
+  });
+
+  bot.action(/sell_(\d+)/, async (ctx) => {
+    const prodId = ctx.match[1];
+    userSessions.set(ctx.from.id, { step: 'SELL_PRICE', prodId });
+    await ctx.answerCbQuery();
+    await ctx.reply(`Введите фактическую цену продажи в рублях (₽) для позиции #${prodId}:`, {
+      ...Markup.keyboard([['❌ Отмена']]).resize()
+    });
+  });
+
+  bot.on('text', async (ctx, next) => {
+    const uid = ctx.from.id;
+    const state = userSessions.get(uid);
+    if (!state) return next();
+
+    const text = ctx.message.text.trim();
+    if (text === '❌ Отмена') {
+      userSessions.delete(uid);
+      return ctx.reply('Отменено.', adminMenu);
+    }
+
+    if (state.step === 'PROD_NAME') {
+      state.name = text;
+      state.step = 'PROD_BATCH';
+      return ctx.reply('📦 Номер объединения:');
+    }
+
+    if (state.step === 'PROD_BATCH') {
+      state.batch = text;
+      state.step = 'PROD_PRICE_CNY';
+      return ctx.reply('💴 Цена покупки в юанях (¥):');
+    }
+
+    if (state.step === 'PROD_PRICE_CNY') {
+      const cny = parseFloat(text.replace(',', '.'));
+      if (isNaN(cny) || cny <= 0) return ctx.reply('Введите корректное число для цены в юанях:');
+      state.cnyPrice = cny;
+      state.step = 'PROD_RATE';
+      return ctx.reply('📈 Курс юаня к рублю:');
+    }
+
+    if (state.step === 'PROD_RATE') {
+      const rate = parseFloat(text.replace(',', '.'));
+      if (isNaN(rate) || rate <= 0) return ctx.reply('Введите курс числом:');
+      state.rate = rate;
+      state.step = 'PROD_WEIGHT';
+      return ctx.reply('⚖️ Складской вес в граммах:');
+    }
+
+    if (state.step === 'PROD_WEIGHT') {
+      const weight = parseFloat(text.replace(/[^\d.]/g, ''));
+      if (isNaN(weight) || weight <= 0) return ctx.reply('Введите вес числом в граммах:');
+      state.weight = weight;
+      state.step = 'PROD_SOURCE';
+      return ctx.reply('🏷 Назначение (например: `Пойзон/авито`):');
+    }
+
+    if (state.step === 'PROD_SOURCE') {
+      state.sourceDest = text;
+      await ctx.reply('⏳ Записываю позицию...');
+      const res = await sendToGAS({ action: 'add_product', ...state });
+      userSessions.delete(uid);
+
+      if (res && res.status === 'ok') {
+        return ctx.reply(`✅ Товар #${res.id} "${state.name}" успешно добавлен со статусом "В пути"!`, adminMenu);
       }
+      return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
     }
+
+    // Карго
+    if (state.step === 'CARGO_BATCH') {
+      state.batch = text;
+      state.step = 'CARGO_WEIGHT';
+      return ctx.reply('⚖️ Общий вес Карго (в граммах):');
+    }
+
+    if (state.step === 'CARGO_WEIGHT') {
+      state.weight = parseFloat(text.replace(/[^\d.]/g, ''));
+      state.step = 'CARGO_PRICE';
+      return ctx.reply('💰 Стоимость доставки Карго в рублях:');
+    }
+
+    if (state.step === 'CARGO_PRICE') {
+      state.price = parseFloat(text.replace(',', '.'));
+      await ctx.reply('⏳ Сохраняю Карго...');
+      const res = await sendToGAS({ action: 'add_cargo', ...state });
+      userSessions.delete(uid);
+      if (res && res.status === 'ok') return ctx.reply(`✅ Карго на партию ${state.batch} записано!`, adminMenu);
+      return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
+    }
+
+    // СДЭК
+    if (state.step === 'CDEK_BATCH') {
+      state.batch = text;
+      state.step = 'CDEK_WEIGHT';
+      return ctx.reply('⚖️ Общий вес СДЭК (в граммах):');
+    }
+
+    if (state.step === 'CDEK_WEIGHT') {
+      state.weight = parseFloat(text.replace(/[^\d.]/g, ''));
+      state.step = 'CDEK_PRICE';
+      return ctx.reply('💰 Стоимость СДЭК в рублях:');
+    }
+
+    if (state.step === 'CDEK_PRICE') {
+      state.price = parseFloat(text.replace(',', '.'));
+      await ctx.reply('⏳ Заношу СДЭК...');
+      const res = await sendToGAS({ action: 'add_cdek', ...state });
+      userSessions.delete(uid);
+      if (res && res.status === 'ok') return ctx.reply(`✅ СДЭК на партию ${state.batch} записан!`, adminMenu);
+      return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
+    }
+
+    // Продажа
+    if (state.step === 'SELL_PRICE') {
+      const sellPrice = parseFloat(text.replace(',', '.'));
+      if (isNaN(sellPrice) || sellPrice <= 0) return ctx.reply('Введите корректную сумму:');
+      await ctx.reply('⏳ Обновляю статус...');
+      const res = await sendToGAS({ action: 'sell_product', id: state.prodId, sellPrice });
+      userSessions.delete(uid);
+
+      if (res && res.status === 'ok') {
+        return ctx.reply(`🎉 Товар "${res.name}" продан за ${sellPrice} ₽!`, adminMenu);
+      }
+      return ctx.reply(`⚠️ Ошибка: ${res?.error || 'Сбой'}`, adminMenu);
+    }
+
+    return next();
+  });
+
+  try {
+    await bot.telegram.deleteWebhook({ drop_pending_updates: true });
+    await bot.launch();
+    console.log('Бот успешно запущен!');
   } catch (err) {
-    console.error('Ошибка в трекере:', err);
+    console.error('Ошибка launch():', err);
   }
-  return next();
-});
-
-// Расчет
-function calculateClientReceipt(cnyPrice, weightKg) {
-  const rawCost = cnyPrice * CONFIG.baseCnyRate;
-
-  let targetMarginPercent = 0.10;
-  if (rawCost <= 1000) targetMarginPercent = 0.30;
-  else if (rawCost <= 5000) targetMarginPercent = 0.20;
-
-  const totalTargetProfit = (rawCost * targetMarginPercent) + CONFIG.hiddenCompensatedFee;
-  const deliveryProfit = weightKg * (CONFIG.clientDeliveryPerKg - 1000);
-
-  let profitInRate = totalTargetProfit - deliveryProfit;
-  if (profitInRate < 0) profitInRate = 0;
-
-  const rateMarkupPerCny = profitInRate / cnyPrice;
-  const clientCnyRate = CONFIG.baseCnyRate + rateMarkupPerCny;
-
-  const clientGoodsCost = cnyPrice * clientCnyRate;
-  const clientDeliveryCost = weightKg * CONFIG.clientDeliveryPerKg;
-  const finalTotal = clientGoodsCost + clientDeliveryCost;
-
-  return {
-    clientCnyRate: clientCnyRate.toFixed(2),
-    clientGoodsCost: Math.round(clientGoodsCost),
-    clientDeliveryCost: Math.round(clientDeliveryCost),
-    finalTotal: Math.round(finalTotal)
-  };
 }
-
-// Меню
-const mainMenu = Markup.keyboard([
-  ['📦 Рассчитать заказ', '📏 Таблица размеров'],
-  ['ℹ️ Условия и FAQ', '💬 Связь с менеджером']
-]).resize();
-
-const sizeMenuKeyboard = Markup.inlineKeyboard([
-  [Markup.button.callback('👟 Nike / Jordan', 'size_nike'), Markup.button.callback('👟 Adidas / Yeezy', 'size_adidas')],
-  [Markup.button.callback('👕 Одежда (Китай/Poizon)', 'size_apparel')],
-  [Markup.button.callback('📐 Как правильно измерить стопу', 'size_measure')]
-]);
-
-bot.start(async (ctx) => {
-  userState.delete(ctx.from.id);
-  await ctx.reply(
-    '🇨🇳 *CARGO2828 — Выкуп и доставка товаров из Китая*\n\n' +
-    '🔥 *АКЦИЯ В ЧЕСТЬ ЗАПУСКА: Комиссия сервиса 0 ₽!*\n\n' +
-    '📌 *Возможности:*\n' +
-    '• *«📦 Рассчитать заказ»* — мгновенный расчет без скрытых доплат.\n' +
-    '• *«📏 Таблица размеров»* — подбор размера обуви и одежды с Poizon.\n' +
-    '• Или отправьте сразу строкой: `цена вес` (например: `450 1.3`).',
-    { parse_mode: 'Markdown', ...mainMenu }
-  );
-});
-
-bot.hears('📏 Таблица размеров', async (ctx) => {
-  await ctx.reply(
-    '📏 *РАЗМЕРНЫЕ СЕТКИ И ГИД ПО ВЫБОРУ*\nВыберите категорию:',
-    { parse_mode: 'Markdown', ...sizeMenuKeyboard }
-  );
-});
-
-bot.action('size_menu', async (ctx) => {
-  await ctx.answerCbQuery().catch(() => {});
-  await ctx.editMessageText('📏 *РАЗМЕРНЫЕ СЕТКИ И ГИД ПО ВЫБОРУ*\nВыберите категорию:', { parse_mode: 'Markdown', ...sizeMenuKeyboard });
-});
-
-bot.action('size_nike', async (ctx) => {
-  await ctx.answerCbQuery().catch(() => {});
-  await ctx.editMessageText(
-    '👟 *СЕТКА NIKE / JORDAN:*\n• **EU 40** = **25.0 см**\n• **EU 41** = **26.0 см**\n• **EU 42** = **26.5 см**\n• **EU 43** = **27.5 см**\n• **EU 44** = **28.0 см**\n• **EU 45** = **29.0 см**\n\n💡 _Берите строго по длине стопы в см._',
-    { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]]) }
-  );
-});
-
-bot.action('size_adidas', async (ctx) => {
-  await ctx.answerCbQuery().catch(() => {});
-  await ctx.editMessageText(
-    '👟 *СЕТКА ADIDAS / YEEZY:*\n• **EU 40 2/3** = **25.0 см**\n• **EU 41 1/3** = **25.5 см**\n• **EU 42 2/3** = **26.5 см**\n• **EU 43 1/3** = **27.0 см**\n• **EU 44 2/3** = **28.0 см**\n\n⚠️ _Yeezy и Samba маломерят — берите на 0.5-1 размер больше._',
-    { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]]) }
-  );
-});
-
-bot.action('size_apparel', async (ctx) => {
-  await ctx.answerCbQuery().catch(() => {});
-  await ctx.editMessageText(
-    '👕 *ОДЕЖДА (АЗИЯ):*\n⚠️ Китайские бренды маломерят на 1-2 размера.\n• **S:** 160-168 см | 50-60 кг\n• **M:** 168-174 см | 60-68 кг\n• **L:** 174-180 см | 68-78 кг\n• **XL:** 180-185 см | 78-88 кг',
-    { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]]) }
-  );
-});
-
-bot.action('size_measure', async (ctx) => {
-  await ctx.answerCbQuery().catch(() => {});
-  await ctx.editMessageText(
-    '📐 *КАК ИЗМЕРИТЬ СТОПУ:*\n1. Положите лист А4 к стене.\n2. Встаньте ногой на лист, пятка у стены.\n3. Отметьте самый длинный палец.\n4. Измерьте в см и сверьте с таблицей.',
-    { parse_mode: 'Markdown', ...Markup.inlineKeyboard([[Markup.button.callback('⬅️ Назад к выбору', 'size_menu')]]) }
-  );
-});
-
-bot.hears('ℹ️ Условия и FAQ', async (ctx) => {
-  await ctx.reply(
-    '📋 *ИНФОРМАЦИЯ:*\n⏱ *Сроки:* 20–25 дней до Мск.\n📦 *Получение:* СДЭК (оплата по РФ при получении).\n🎁 *Комиссия:* 0 ₽ (акция)!',
-    { parse_mode: 'Markdown' }
-  );
-});
-
-bot.hears('💬 Свя
