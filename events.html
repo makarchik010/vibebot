@@ -15,74 +15,63 @@
         .events-grid-full {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
+            gap: 22px;
             margin-top: 30px;
             margin-bottom: 60px;
         }
         .event-card {
             background: #FFFFFF;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--primary);
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            gap: 16px;
             transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
         .event-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            box-shadow: 0 10px 26px rgba(44, 53, 49, 0.08);
         }
-        .event-card-img {
-            height: 200px;
-            background: #EAE6DF;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            position: relative;
-        }
-        .event-card-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 0;
-        }
-        .event-date-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(37, 40, 38, 0.85);
-            color: #FFFFFF;
+        .event-date-tag {
+            display: inline-block;
+            align-self: flex-start;
+            background: #EAF0EC;
+            color: var(--primary);
             padding: 4px 10px;
             border-radius: 4px;
             font-size: 0.78rem;
-            font-weight: 500;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            margin-bottom: 12px;
         }
-        .event-card-body {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            justify-content: space-between;
-        }
-        .event-card-body h4 {
+        .event-card h4 {
+            font-family: var(--font-heading);
             font-size: 1.15rem;
-            color: var(--text-main);
-            margin-bottom: 8px;
+            line-height: 1.35;
+            color: var(--dark);
+            margin-bottom: 0;
         }
         .event-org {
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             color: var(--secondary);
-            font-weight: 600;
+            font-weight: 500;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border);
         }
         .back-nav-bar {
             padding: 20px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
+        }
+        .back-link {
+            font-weight: 600;
+            color: var(--primary);
         }
     </style>
 </head>
@@ -101,157 +90,115 @@
 
         <div class="events-grid-full">
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Октябрь 2022</span>
-                    <span>Фото с тренинга</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Октябрь 2022</span>
                     <h4>Корпоративный тренинг для молодежи «Тайм-менеджмент»</h4>
-                    <p class="event-org">Организации Удмуртской Республики</p>
                 </div>
+                <p class="event-org">Организации Удмуртской Республики</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Март 2023</span>
-                    <span>Фото с тренинга</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Март 2023</span>
                     <h4>Корпоративный тренинг «Управление конфликтами»</h4>
-                    <p class="event-org">Практическая фасилитация для коллектива</p>
                 </div>
+                <p class="event-org">Практическая фасилитация для коллектива</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Апрель 2023</span>
-                    <span>Фото форума</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Апрель 2023</span>
                     <h4>Молодежный форум АО «Концерн "Калашников"»</h4>
-                    <p class="event-org">АО «Концерн "Калашников"»</p>
                 </div>
+                <p class="event-org">АО «Концерн "Калашников"»</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Август 2023</span>
-                    <span>Фото с тренинга</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Август 2023</span>
                     <h4>Корпоративный тренинг «Эмоциональный интеллект руководителей»</h4>
-                    <p class="event-org">Развитие управленческого резерва</p>
                 </div>
+                <p class="event-org">Развитие управленческого резерва</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Ноябрь 2024</span>
-                    <span>Фото фестиваля</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Ноябрь 2024</span>
                     <h4>Молодежный фестиваль ПАО «Удмуртнефть»</h4>
-                    <p class="event-org">ПАО «Удмуртнефть»</p>
                 </div>
+                <p class="event-org">ПАО «Удмуртнефть»</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Март 2025</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Март 2025</span>
                     <h4>Семинар «Секреты успешной мотивации»</h4>
-                    <p class="event-org">Корпорация развития Удмуртской Республики</p>
                 </div>
+                <p class="event-org">Корпорация развития Удмуртской Республики</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Апрель 2025</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Апрель 2025</span>
                     <h4>Семинар «Искусство управления»</h4>
-                    <p class="event-org">Корпорация развития Удмуртской Республики</p>
                 </div>
+                <p class="event-org">Корпорация развития Удмуртской Республики</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Июнь 2025</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Июнь 2025</span>
                     <h4>Семинар «Нематериальное стимулирование»</h4>
-                    <p class="event-org">АО «Салаватстекло Волга»</p>
                 </div>
+                <p class="event-org">АО «Салаватстекло Волга»</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Сентябрь 2025</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Сентябрь 2025</span>
                     <h4>Семинар «Ошибки руководителей»</h4>
-                    <p class="event-org">Корпорация развития Удмуртской Республики</p>
                 </div>
+                <p class="event-org">Корпорация развития Удмуртской Республики</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Сентябрь 2025</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Сентябрь 2025</span>
                     <h4>Семинар «Инструменты удержания талантливых сотрудников»</h4>
-                    <p class="event-org">Корпорация развития Удмуртской Республики</p>
                 </div>
+                <p class="event-org">Корпорация развития Удмуртской Республики</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Ноябрь 2025</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Ноябрь 2025</span>
                     <h4>Семинар «Инструменты управления»</h4>
-                    <p class="event-org">Республиканский бизнес-инкубатор УР</p>
                 </div>
+                <p class="event-org">Республиканский бизнес-инкубатор УР</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Март 2026</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Март 2026</span>
                     <h4>Семинар для педагогов «Теория поколений»</h4>
-                    <p class="event-org">АНО «Институт образования»</p>
                 </div>
+                <p class="event-org">АНО «Институт образования»</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Март 2026</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Март 2026</span>
                     <h4>Семинар «Как управлять поколениями X, Y, Z»</h4>
-                    <p class="event-org">Корпорация развития Удмуртской Республики</p>
                 </div>
+                <p class="event-org">Корпорация развития Удмуртской Республики</p>
             </article>
 
             <article class="event-card">
-                <div class="event-card-img">
-                    <span class="event-date-badge">Апрель 2026</span>
-                    <span>Фото семинара</span>
-                </div>
-                <div class="event-card-body">
+                <div>
+                    <span class="event-date-tag">Апрель 2026</span>
                     <h4>Семинар «Игры, в которые играют в офисе»</h4>
-                    <p class="event-org">Корпорация развития Удмуртской Республики</p>
                 </div>
+                <p class="event-org">Корпорация развития Удмуртской Республики</p>
             </article>
         </div>
 
@@ -264,14 +211,34 @@
     <!-- Модалка -->
     <div id="contact-modal" class="modal-overlay">
         <div class="modal-window">
-            <button class="modal-close-btn" id="modal-close">&times;</button>
+            <button type="button" class="modal-close-btn" id="modal-close" aria-label="Закрыть">&times;</button>
             <h3 class="modal-title">Свяжитесь со мной</h3>
-            <p class="modal-subtitle">Выберите удобный мессенджер для связи:</p>
+            <p class="modal-subtitle">Выберите удобный способ связи, чтобы обсудить проект или задать вопрос</p>
             <div class="modal-messengers-clean">
-                <a href="https://t.me/SokovikovaSvetlana" class="clean-btn btn-tg" target="_blank"><span>✈</span> Telegram</a>
-                <a href="https://max.ru/u/f9LHodD0cOLdkVy2zFyxgfVeQd7KhTa3dbVMVWaqyyc4YL8ckMcMt-DIKUo" class="clean-btn btn-max" target="_blank"><span>💬</span> MAX</a>
-                <a href="https://wa.me/79225039888" class="clean-btn btn-wa" target="_blank"><span>🟢</span> WhatsApp</a>
-                <a href="https://vk.com/sokovikova_svetlana" class="clean-btn btn-vk" target="_blank"><span>🔷</span> ВКонтакте</a>
+                <a href="https://t.me/SokovikovaSvetlana" class="clean-btn btn-tg" target="_blank" rel="noopener">
+                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z"/>
+                    </svg>
+                    <span>Telegram</span>
+                </a>
+                <a href="https://max.ru/u/f9LHodD0cOLdkVy2zFyxgfVeQd7KhTa3dbVMVWaqyyc4YL8ckMcMt-DIKUo" class="clean-btn btn-max" target="_blank" rel="noopener">
+                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 10H7v-2h10v2zm0-3H7V7h10v2z"/>
+                    </svg>
+                    <span>MAX</span>
+                </a>
+                <a href="https://wa.me/79225039888" class="clean-btn btn-wa" target="_blank" rel="noopener">
+                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0012.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 012.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 01-1.26-4.36c0-4.54 3.7-8.24 8.25-8.24zm4.52 11.64c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43l-.48-.01c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.77 2.7 4.29 3.78.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.11-.23-.18-.48-.3z"/>
+                    </svg>
+                    <span>WhatsApp</span>
+                </a>
+                <a href="https://vk.com/sokovikova_svetlana" class="clean-btn btn-vk" target="_blank" rel="noopener">
+                    <svg class="social-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                        <path d="M15.68 2H8.32C4.83 2 2 4.83 2 8.32v7.36C2 19.17 4.83 22 8.32 22h7.36c3.49 0 6.32-2.83 6.32-6.32V8.32C22 4.83 19.17 2 15.68 2zm3.32 14.54h-1.62c-.61 0-.8-.49-1.89-1.58-.96-.94-1.38-1.06-1.62-1.06-.33 0-.43.1-.43.57v1.43c0 .39-.12.64-1.15.64-1.7 0-3.58-1.04-4.91-2.96-2-2.87-2.55-5.03-2.55-5.47 0-.25.1-.48.58-.48h1.62c.44 0 .61.2.78.68.85 2.48 2.28 4.65 2.87 4.65.22 0 .32-.1.32-.67V9.75c-.07-1.22-.71-1.32-.71-1.75 0-.21.17-.41.44-.41h2.55c.36 0 .49.19.49.62v3.35c0 .36.16.48.27.48.22 0 .4-.12.82-.54 1.27-1.42 2.18-3.57 2.18-3.57.12-.25.32-.48.77-.48h1.62c.49 0 .6.25.49.62-.2 0.94-2.18 3.73-2.28 3.88-.23.36-.32.52 0 .95.23.31 1 1 1.52 1.6 1.05 1.21 1.34 1.77 1.49 2.03.1.25-.09.5-.49.5z"/>
+                    </svg>
+                    <span>ВКонтакте</span>
+                </a>
             </div>
         </div>
     </div>
