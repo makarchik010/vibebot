@@ -533,7 +533,7 @@ a {
 .footer {
     background: #232B28;
     color: #B5BFBA;
-    padding: 38px 0;
+    padding: 36px 0;
     font-size: 0.9rem;
 }
 
@@ -541,15 +541,29 @@ a {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
 }
 
-.footer a {
-    color: var(--white);
-    text-decoration: underline;
+.footer-credit {
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(181, 191, 186, 0.55);
+}
+
+.footer-credit a {
+    color: rgba(181, 191, 186, 0.72);
+    text-decoration: none;
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+.footer-credit a:hover {
+    color: #FFFFFF;
 }
 
 /* =========================================
-   ПЛАВАЮЩАЯ КНОПКА СВЯЗИ (КАК У АКУБОВОЙ)
+   ПЛАВАЮЩАЯ КНОПКА СВЯЗИ
    ========================================= */
 .floating-contact-btn {
     position: fixed;
@@ -581,48 +595,99 @@ a {
     fill: currentColor;
 }
 
-/* Модальные окна */
+/* Модальные окна и виджет акции */
 .promo-modal {
     position: fixed;
-    bottom: 95px;
+    bottom: 98px;
     right: 25px;
     z-index: 990;
     display: none;
-    max-width: 320px;
+    width: 280px;
+    max-width: calc(100vw - 36px);
 }
 
 .promo-modal.active {
     display: block;
+    animation: promoFadeIn 0.35s ease forwards;
+}
+
+@keyframes promoFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .promo-content {
     background: var(--white);
-    padding: 22px;
+    padding: 18px 20px;
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 32px rgba(44, 53, 49, 0.14);
     border: 1px solid var(--border);
     position: relative;
 }
 
 .promo-close {
     position: absolute;
-    top: 8px;
-    right: 12px;
-    background: none;
+    top: 10px;
+    right: 10px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: transparent;
     border: none;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: #8A9490;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.promo-close:hover {
+    background-color: var(--bg-light);
+    color: var(--dark);
 }
 
 .promo-badge {
-    background: #F8EBE6;
-    color: #B2533E;
-    font-size: 0.75rem;
-    font-weight: 700;
+    background: #EAF0EC;
+    color: var(--primary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     padding: 3px 8px;
     border-radius: 4px;
     display: inline-block;
     margin-bottom: 8px;
+}
+
+.promo-content h3 {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    line-height: 1.3;
+    color: var(--dark);
+    margin-bottom: 6px;
+    padding-right: 22px;
+}
+
+.promo-content p {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: #5E6864;
+    margin-bottom: 14px;
+}
+
+.promo-content .btn {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 0.85rem;
 }
 
 .modal-overlay {
@@ -631,8 +696,8 @@ a {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background: rgba(35, 43, 40, 0.55);
+    backdrop-filter: blur(5px);
     z-index: 2000;
     display: none;
     align-items: center;
@@ -646,41 +711,58 @@ a {
 
 .modal-window {
     background: var(--white);
-    padding: 35px 30px;
-    border-radius: 14px;
+    padding: 36px 32px;
+    border-radius: 16px;
     width: 100%;
-    max-width: 440px;
+    max-width: 420px;
     position: relative;
     text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 24px 60px rgba(35, 43, 40, 0.18);
 }
 
 .modal-close-btn {
     position: absolute;
     top: 14px;
     right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     background: none;
     border: none;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
+    line-height: 1;
     cursor: pointer;
-    color: #999;
+    color: #8A9490;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background-color: var(--bg-light);
+    color: var(--dark);
 }
 
 .modal-title {
     font-family: var(--font-heading);
-    font-size: 1.8rem;
+    font-size: 1.75rem;
+    color: var(--dark);
     margin-bottom: 8px;
 }
 
 .modal-subtitle {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     color: #666;
     margin-bottom: 24px;
+    line-height: 1.5;
 }
 
 .modal-messengers-clean {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .clean-btn {
@@ -688,16 +770,33 @@ a {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 14px;
-    border-radius: 8px;
-    font-weight: 600;
-    color: var(--white);
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background-color: var(--bg-light);
+    color: var(--dark);
+    border: 1px solid var(--border);
+    transition: all 0.25s ease;
 }
 
-.btn-tg { background: #229ED9; }
-.btn-wa { background: #25D366; }
-.btn-vk { background: #0077FF; }
-.btn-max { background: #4C6E5C; }
+.clean-btn .social-svg {
+    color: var(--primary);
+    transition: color 0.25s ease;
+    flex-shrink: 0;
+}
+
+.clean-btn:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(76, 110, 92, 0.22);
+}
+
+.clean-btn:hover .social-svg {
+    color: var(--white);
+}
 
 /* =========================================
    АНИМАЦИИ ВЫКАТЫВАНИЯ ПРИ СКРОЛЛЕ
@@ -779,5 +878,9 @@ a {
         right: 18px;
         width: 54px;
         height: 54px;
+    }
+    .promo-modal {
+        bottom: 84px;
+        right: 18px;
     }
 }
