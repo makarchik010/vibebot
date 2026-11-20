@@ -366,7 +366,9 @@
     <footer class="footer">
         <div class="container footer-container">
             <p>&copy; 2026 Соковикова Светлана. Психолог, Медиатор, Бизнес-тренер</p>
-            <p>Сайт разработан <a href="#">Макаром Соковиковым</a></p>
+            <p class="footer-credit">
+                <a href="#" target="_blank" rel="noopener">Engineered by SKOV TECHNOLOGIES</a>
+            </p>
         </div>
     </footer>
 
@@ -380,7 +382,7 @@
     <!-- Всплывающий баннер спецпредложения -->
     <div id="promo-popup" class="promo-modal">
         <div class="promo-content">
-            <button class="promo-close" id="promo-close">&times;</button>
+            <button type="button" class="promo-close" id="promo-close" aria-label="Закрыть предложение">&times;</button>
             <span class="promo-badge" id="promo-badge">Спецпредложение</span>
             <h3 id="promo-title">Ознакомительная встреча</h3>
             <p id="promo-text">Запишитесь на онлайн-консультацию со скидкой 20% в этом месяце</p>
@@ -391,7 +393,7 @@
     <!-- Всплывающее окно контактов -->
     <div id="contact-modal" class="modal-overlay">
         <div class="modal-window">
-            <button class="modal-close-btn" id="modal-close" aria-label="Закрыть">&times;</button>
+            <button type="button" class="modal-close-btn" id="modal-close" aria-label="Закрыть">&times;</button>
             <h3 class="modal-title">Свяжитесь со мной</h3>
             <p class="modal-subtitle">Выберите удобный способ связи, чтобы задать вопрос или выбрать время консультации</p>
             
