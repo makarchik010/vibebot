@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const revealElements = document.querySelectorAll('.scroll-reveal');
     
     revealElements.forEach((el, index) => {
-        // Каскадная микро-задержка для карточек в сетках
         const delay = (index % 3) * 0.1;
         el.style.transitionDelay = `${delay}s`;
     });
@@ -182,7 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (pOfflinePack && data.config.price_offline_pack) pOfflinePack.textContent = data.config.price_offline_pack;
 
                     // Баннер акции
-                    if (data.config.promo_active === 'true' || data.config.promo_active === true) {
+                    if (
+                        (data.config.promo_active === 'true' || data.config.promo_active === true) &&
+                        sessionStorage.getItem('promoClosed') !== 'true'
+                    ) {
                         const promoBanner = document.getElementById('promo-popup');
                         const promoTitle = document.getElementById('promo-title');
                         const promoText = document.getElementById('promo-text');
@@ -193,7 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (promoBtn && data.config.promo_btn) promoBtn.textContent = data.config.promo_btn;
 
                         setTimeout(() => {
-                            if (promoBanner) promoBanner.classList.add('active');
+                            if (promoBanner && sessionStorage.getItem('promoClosed') !== 'true') {
+                                promoBanner.classList.add('active');
+                            }
                         }, 2000);
                     }
                 }
@@ -229,17 +233,26 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.log('Синхронизация данных:', err));
     }
 
-    // Закрытие баннера спецпредложения
+    // Закрытие баннера спецпредложения с сохранением в sessionStorage
     const promoClose = document.getElementById('promo-close');
     const promoPopup = document.getElementById('promo-popup');
-    if (promoClose && promoPopup) {
-        promoClose.addEventListener('click', () => {
-            promoPopup.classList.remove('active');
-        });
+    const promoActionBtn = document.getElementById('promo-btn');
+
+    const closePromo = () => {
+        if (promoPopup) promoPopup.classList.remove('active');
+        sessionStorage.setItem('promoClosed', 'true');
+    };
+
+    if (promoClose) {
+        promoClose.addEventListener('click', closePromo);
+    }
+
+    if (promoActionBtn) {
+        promoActionBtn.addEventListener('click', closePromo);
     }
 });
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Находим карточки и блоки для плавного появления
     const animElements = document.querySelectorAll('.card, .price-card, .quote-card, .project-mini-card, .mediation-content-card');
     
     animElements.forEach((el, index) => {
@@ -258,4 +271,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     animElements.forEach(el => observer.observe(el));
 });
-
